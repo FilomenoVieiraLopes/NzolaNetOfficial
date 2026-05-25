@@ -1,58 +1,143 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# NzolaNet API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+NzolaNet e uma API Laravel para uma rede social academica. A aplicacao permite registo e autenticacao de utilizadores, gestao de perfis, publicacoes com texto/imagem/video, comentarios, bazes, feed de noticias, seguidores e notificacoes.
 
-## About Laravel
+Este repositorio contem o backend. O frontend Angular deve consumir os endpoints documentados em [docs/API.md](docs/API.md) e seguir o guia de integracao em [docs/ANGULAR.md](docs/ANGULAR.md).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Documentacao
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- [Arquitetura e requisitos](docs/ARCHITECTURE.md)
+- [Endpoints da API](docs/API.md)
+- [Guia para ligar com Angular](docs/ANGULAR.md)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stack tecnica
 
-## Learning Laravel
+- PHP 8.3+
+- Laravel 13
+- Laravel Sanctum para autenticacao por token
+- MySQL, PostgreSQL ou outro banco suportado pelo Laravel
+- Vite apenas para assets base do Laravel
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Funcionalidades principais
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Registo, login, logout e recuperacao de senha.
+- Edicao de perfil, avatar e privacidade (`public` ou `private`).
+- Seguir e deixar de seguir utilizadores.
+- Criar, listar, editar e apagar publicacoes proprias.
+- Upload de imagem e video em publicacoes.
+- Dar/remover bazes em publicacoes.
+- Criar, listar, editar e apagar comentarios.
+- Moderacao: utilizador `admin` pode apagar comentarios de outros utilizadores.
+- Feed principal e feed de utilizadores seguidos.
+- Notificacoes para follow, baze e comentario.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Instalar localmente
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+1. Instalar dependencias PHP:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+2. Instalar dependencias Node:
 
-## Contributing
+```bash
+npm install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. Criar o ficheiro `.env`:
 
-## Code of Conduct
+```bash
+copy .env.example .env
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+4. Gerar a chave da aplicacao:
 
-## Security Vulnerabilities
+```bash
+php artisan key:generate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+5. Configurar o banco no `.env`:
 
-## License
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nzolanet
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+6. Executar migrations:
+
+```bash
+php artisan migrate
+```
+
+7. Criar o link publico para uploads:
+
+```bash
+php artisan storage:link
+```
+
+8. Subir o servidor:
+
+```bash
+php artisan serve
+```
+
+Por padrao, a API fica em:
+
+```text
+http://127.0.0.1:8000/api
+```
+
+## Autenticacao
+
+Os endpoints protegidos usam token Sanctum. Depois de login ou registo, o backend devolve:
+
+```json
+{
+  "token": "1|token..."
+}
+```
+
+No Angular, envie esse token nos requests protegidos:
+
+```http
+Authorization: Bearer 1|token...
+```
+
+## Testes
+
+Executar:
+
+```bash
+php artisan test
+```
+
+Nota: o `phpunit.xml` usa SQLite em memoria para testes. Se o PHP local nao tiver `pdo_sqlite`/`sqlite3`, a suite falha com `could not find driver`. Nesse caso, instale/ative a extensao SQLite do PHP ou ajuste o ambiente de testes para MySQL.
+
+## Estrutura resumida
+
+```text
+app/
+  DTOs/          Objetos de entrada/saida da API
+  Http/Controllers/  Recebem requests e devolvem respostas JSON
+  Interfaces/    Contratos para services e repositories
+  Models/        Modelos Eloquent e relacoes
+  Providers/     Bindings de injecao de dependencia
+  Repositories/  Acesso a base de dados
+  Services/      Regras de negocio
+routes/api.php   Rotas REST da API
+database/migrations/ Estrutura do banco
+tests/Feature/  Testes dos endpoints principais
+```
+
+## Observacoes de seguranca
+
+- Nunca subir `.env` para o GitHub.
+- Nunca guardar senhas em texto puro.
+- Tokens devem ser guardados no frontend de forma cuidadosa.
+- Uploads aceitam apenas tipos e tamanhos definidos nos controllers.
+- Perfis privados so podem ser vistos pelo dono ou por seguidores.
