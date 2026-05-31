@@ -16,7 +16,7 @@ class PostService implements IPostService
         private readonly IPostRepository $postRepository,
     ) {}
 
-    public function getById(string $id, ?int $viewerId = null, bool $viewerIsAdmin = false): PostResponseDTO
+    public function getById(string $id): PostResponseDTO
     {
         // Busca com autor e contadores para montar a resposta completa.
         $post = $this->postRepository->findById($id);
@@ -25,18 +25,18 @@ class PostService implements IPostService
             throw new \Exception('Publicacao nao encontrada.', 404);
         }
 
-        return PostResponseDTO::fromModel($post, $viewerId, $viewerIsAdmin);
+        return PostResponseDTO::fromModel($post);
     }
 
-    public function create(CreatePostDTO $dto, ?int $viewerId = null, bool $viewerIsAdmin = false): PostResponseDTO
+    public function create(CreatePostDTO $dto): PostResponseDTO
     {
         // Cria a publicacao associada ao utilizador autenticado.
         $post = $this->postRepository->create($dto);
 
-        return PostResponseDTO::fromModel($post, $viewerId, $viewerIsAdmin);
+        return PostResponseDTO::fromModel($post);
     }
 
-    public function update(string $id, string $userId, UpdatePostDTO $dto, bool $isAdmin = false): PostResponseDTO
+    public function update(string $id, string $userId, UpdatePostDTO $dto): PostResponseDTO
     {
         $post = $this->postRepository->findById($id);
 
@@ -45,16 +45,16 @@ class PostService implements IPostService
         }
 
         // Regra do enunciado: apenas o autor edita a propria publicacao.
-        if (!$isAdmin && (int) $post->user_id !== (int) $userId) {
+        if ((int) $post->user_id !== (int) $userId) {
             throw new \Exception('Sem permissao para editar esta publicacao.', 403);
         }
 
         $updated = $this->postRepository->update($id, $dto);
 
-        return PostResponseDTO::fromModel($updated, (int) $userId, $isAdmin);
+        return PostResponseDTO::fromModel($updated);
     }
 
-    public function delete(string $id, string $userId, bool $isAdmin = false): void
+    public function delete(string $id, string $userId): void
     {
         $post = $this->postRepository->findById($id);
 
@@ -63,7 +63,7 @@ class PostService implements IPostService
         }
 
         // Regra do enunciado: apenas o autor apaga a propria publicacao.
-        if (!$isAdmin && (int) $post->user_id !== (int) $userId) {
+        if ((int) $post->user_id !== (int) $userId) {
             throw new \Exception('Sem permissao para apagar esta publicacao.', 403);
         }
 
@@ -80,10 +80,5 @@ class PostService implements IPostService
     {
         // Feed principal: publicacoes recentes, em ordem cronologica inversa.
         return $this->postRepository->getAllPaginated();
-    }
-
-    public function getByUser(string $userId): LengthAwarePaginator
-    {
-        return $this->postRepository->getByUser($userId);
     }
 }

@@ -7,7 +7,6 @@ html,
 body{
 
     height:100%;
-    overflow-x:hidden;
 }
 
 
@@ -17,8 +16,4 @@ body{
     font-family: Inter, sans-serif;
     background:#f7f9fb;
 
-}
-
-* {
-    box-sizing: border-box;
 }

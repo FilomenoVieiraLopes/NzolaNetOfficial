@@ -1,58 +1,95 @@
-<main class="w-full">
-  <header class="sticky top-0 z-30 bg-surface dark:bg-slate-900/80 backdrop-blur-xl border-b border-outline-variant px-gutter h-20 flex items-center justify-between">
-    <h1 class="font-h2 text-h2 font-bold tracking-tight text-on-surface dark:text-white">Editar perfil</h1>
-    <div class="flex items-center gap-stack-md">
-      <button routerLink="/app/perfil" class="hidden md:block font-label-md text-secondary dark:text-slate-400 hover:text-primary px-4 py-2 transition-colors">Cancelar</button>
-      <button (click)="save()" [disabled]="isSaving || !name.trim()" class="bg-primary text-on-primary font-label-md px-6 py-2.5 rounded-full shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-50">
-        {{ isSaving ? 'A guardar...' : 'Guardar' }}
-      </button>
-    </div>
-  </header>
+    <!-- Main Content Canvas -->
+    <main class="w-full">
+        <!-- Top Sticky Header -->
+        <header
+            class="sticky top-0 z-30 bg-surface dark:bg-slate-900/80 backdrop-blur-xl border-b border-outline-variant px-gutter h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button class="lg:hidden p-2 rounded-full hover:bg-surface-container-high dark:bg-slate-700">
+                    <span class="material-symbols-outlined" data-icon="menu">menu</span>
+                </button>
+                <h1 class="font-h2 text-h2 font-bold tracking-tight text-on-surface dark:text-white">Edit Profile</h1>
+            </div>
+            <div class="flex items-center gap-stack-md">
+                <button
+                    class="hidden md:block font-label-md text-secondary dark:text-slate-400 dark:text-slate-500 hover:text-primary px-4 py-2 transition-colors">Cancel</button>
+                <button
+                    (click)="saveChanges()"
+                    class="bg-primary text-on-primary font-label-md px-6 py-2.5 rounded-full shadow-lg hover:shadow-primary/20 scale-100 active:scale-95 transition-all ease-out-expo"
+                    routerLink="/app/profile">
+                    Save Changes
+                </button>
+            </div>
+        </header>
 
-  <div class="max-w-[800px] mx-auto px-gutter py-stack-lg space-y-stack-lg">
-    <p *ngIf="error" class="rounded-2xl bg-red-50 border border-red-100 px-5 py-4 text-sm font-medium text-red-700">
-      {{ error }}
-    </p>
+        <!-- File inputs escondidos -->
+        <input type="file" id="avatarInput" accept="image/*" (change)="onAvatarSelected($event)" class="hidden" />
+        <input type="file" id="coverInput" accept="image/*" class="hidden" />
 
-    <section class="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
-      <div class="flex flex-col sm:flex-row gap-6 sm:items-center">
-        <div class="relative w-32 h-32 rounded-full overflow-hidden bg-surface-container dark:bg-slate-700 shadow-xl">
-          <img *ngIf="avatarPreview" class="w-full h-full object-cover" [src]="avatarPreview" alt="Avatar" />
-          <div *ngIf="!avatarPreview" class="w-full h-full flex items-center justify-center text-on-surface-variant">
-            <span class="material-symbols-outlined text-5xl">person</span>
-          </div>
+        <!-- Form Content -->
+        <div class="max-w-[800px] mx-auto px-gutter py-stack-lg space-y-stack-lg">
+            <!-- Error Message -->
+            <div *ngIf="uploadError" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
+                {{ uploadError }}
+            </div>
+
+            <!-- Visual Branding Section -->
+            <section class="relative">
+                <!-- Cover Photo -->
+                <div
+                    class="relative group h-64 w-full bg-surface-container-highest dark:bg-slate-700 rounded-2xl overflow-hidden shadow-sm cursor-pointer"
+                    (click)="triggerCoverUpload()">
+                    <img class="w-full h-full object-cover"
+                        [src]="coverPreview || 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6bGWrkmeM-vgUPYeHAwnnM3bQNODm7BkBEeutLzTaGGKZUee70Ex6RTiIypCI8UVhmoJAbmB5vs4vAf08r-qYhLmCJMwSVCerwWpeIKfYCtAlL6s_M1rgbsOtpAOLez5qOAKLddouJJQ4h1q4ZH06yhJamjW29U2vY1c20Vvs177goWsPMV_GMNULlN_uzPIwWba97S9QwmR6TqyINCmwZFsxPuCO3Seo4Gs7b0FxGsNUQZemZ6IfhLPwD6PvYoUqJ4CO1aEFXKY'" />
+                    <div
+                        class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div
+                            class="bg-white dark:bg-slate-800/90 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 text-on-surface dark:text-white font-label-md">
+                            <span class="material-symbols-outlined text-[20px]"
+                                data-icon="photo_camera">photo_camera</span>
+                            Change Cover
+                        </div>
+                    </div>
+                </div>
+                <!-- Avatar Circle -->
+                <div class="absolute -bottom-16 left-8 group">
+                    <div
+                        class="relative w-32 h-32 rounded-full border-4 border-background overflow-hidden bg-surface-container dark:bg-slate-800 shadow-xl cursor-pointer"
+                        (click)="triggerAvatarUpload()">
+                        <img class="w-full h-full object-cover"
+                            [src]="avatarPreview || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAV4NB9khYpPF7T7M9YptrKq1z6ewEVTrKLR_q6Uuq0zJ_LSuM88_WCcrwVeK3cErecu18RiImoYOQ2MlPcUvtdRmgqudE79QKsA2ihLkbKLzq3JOhebJ5CvkdJjvLXLqymkoEnh_slQFdW9gDl4Fd4SkS_6E95Rvzk50jNPD906d41cWZLP0a_hyMHnrSqCLR3bkQBG8H_94bz0wbHb8NltVNpdj6tApKz5PFuNH4UriPCA6NZi5IU9BQKRnKsHIBYZlAa-aJ93Hg'" />
+                        <div
+                            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <span class="material-symbols-outlined text-white" data-icon="edit">edit</span>
+                        </div>
+                        <!-- Spinner durante upload -->
+                        <div *ngIf="uploadingAvatar" class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Spacer for Avatar -->
+            <div class="h-16"></div>
+            <!-- Form Fields Bento Grid -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+                <!-- Full Name -->
+                <div class="space-y-2">
+                    <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Full
+                        Name</label>
+                    <input
+                        [(ngModel)]="fullName"
+                        class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md"
+                        type="text" />
+                </div>
+                <!-- Bio - Full Width -->
+                <div class="space-y-2 md:col-span-2">
+                    <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Bio</label>
+                    <textarea
+                        [(ngModel)]="bio"
+                        class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md resize-none"
+                        rows="4"></textarea>
+                    <p class="text-right text-label-sm text-outline px-1">{{ bio.length }} / 500 characters</p>
+                </div>
+            </section>
         </div>
-
-        <div>
-          <input #avatarInput type="file" accept="image/*" class="hidden" (change)="onAvatarSelected($event)" />
-          <button (click)="avatarInput.click()" class="inline-flex items-center gap-2 bg-surface-container border border-outline-variant px-4 py-2 rounded-full font-label-md hover:bg-surface-container-high transition-colors">
-            <span class="material-symbols-outlined text-[20px]">photo_camera</span>
-            Alterar foto
-          </button>
-          <p class="mt-2 text-label-sm text-on-surface-variant">JPG, PNG ou WEBP ate 2MB.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
-      <div class="space-y-2">
-        <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Nome</label>
-        <input [(ngModel)]="name" class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md" type="text" />
-      </div>
-
-      <div class="space-y-2">
-        <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Privacidade</label>
-        <select [(ngModel)]="privacy" class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md">
-          <option value="public">Publico</option>
-          <option value="private">Privado</option>
-        </select>
-      </div>
-
-      <div class="space-y-2 md:col-span-2">
-        <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Bio</label>
-        <textarea [(ngModel)]="bio" maxlength="500" class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md resize-none" rows="4"></textarea>
-        <p class="text-right text-label-sm text-outline px-1">{{ bio.length }} / 500 caracteres</p>
-      </div>
-    </section>
-  </div>
-</main>
+    </main>

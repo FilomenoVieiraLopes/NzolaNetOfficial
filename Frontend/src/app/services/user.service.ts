@@ -1,50 +1,68 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { User } from '../models/user.model';
+import { AuthService } from './auth.service';
+
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+export interface UserProfile {
+  id: number | string;
+  name: string;
+  avatar_url?: string;
+  cover_url?: string;
+  bio?: string;
+  privacy?: 'public' | 'private';
+  email?: string;
+  followers_count?: number;
+  following_count?: number;
+  posts_count?: number;
+  [key: string]: any;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
   private http = inject(HttpClient);
-  private apiUrl = environment.apiUrl;
+  private authService = inject(AuthService);
 
-  getUser(id: number): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/users/${id}`);
-  }
+  private getAuthHeaders(): HttpHeaders | undefined {
+    const token = this.authService.getToken();
+    if (!token) {
+      return undefined;
+    }
 
-  searchUsers(term: string): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/users/search`, {
-      params: { q: term }
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`
     });
   }
 
-  updateUser(id: number, data: Partial<Pick<User, 'name' | 'bio' | 'privacy'>>): Observable<{ message: string; user: User }> {
-    return this.http.put<{ message: string; user: User }>(`${this.apiUrl}/users/${id}`, data);
+  getProfile(userId: string): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${API_BASE_URL}/users/${userId}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
-  updateAvatar(id: number, avatar: File): Observable<{ message: string; user: User }> {
+  getFollowers(userId: string): Observable<UserProfile[]> {
+    return this.http.get<UserProfile[]>(`${API_BASE_URL}/users/${userId}/followers`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  getFollowing(userId: string): Observable<UserProfile[]> {
+    return this.http.get<UserProfile[]>(`${API_BASE_URL}/users/${userId}/following`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  updateAvatar(userId: string, file: File): Observable<{ message: string; avatar_url: string; cover_url: string }> {
     const formData = new FormData();
-    formData.append('avatar', avatar);
+    formData.append('avatar', file);
 
-    return this.http.post<{ message: string; user: User }>(`${this.apiUrl}/users/${id}/avatar`, formData);
-  }
-
-  follow(id: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/users/${id}/follow`, {});
-  }
-
-  unfollow(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/users/${id}/follow`);
-  }
-
-  getFollowers(id: number): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/users/${id}/followers`);
-  }
-
-  getFollowing(id: number): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/users/${id}/following`);
+    return this.http.post<{ message: string; avatar_url: string; cover_url: string }>(
+      `${API_BASE_URL}/users/${userId}/avatar`,
+      formData,
+      { headers: this.getAuthHeaders() }
+    );
   }
 }

@@ -23,7 +23,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     // Utilizadores, perfil, avatar e relacoes de follow.
-    Route::get('/users/search', [UserController::class, 'search']);
     Route::get('/users/{id}', [UserController::class, 'show']);
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::post('/users/{id}/avatar', [UserController::class, 'updateAvatar']);
@@ -31,7 +30,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{id}/follow', [UserController::class, 'unfollow']);
     Route::get('/users/{id}/followers', [UserController::class, 'followers']);
     Route::get('/users/{id}/following', [UserController::class, 'following']);
-    Route::get('/users/{id}/posts', [PostController::class, 'byUser']);
 
     // Publicacoes e feeds.
     Route::get('/posts', [PostController::class, 'index']);

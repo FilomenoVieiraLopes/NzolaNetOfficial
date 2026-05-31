@@ -1,6 +1,6 @@
 <section class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm flex flex-col h-full">
   <p class="text-gray-700 dark:text-slate-300 leading-relaxed mb-6 text-sm md:text-base font-medium">
-    Criando experiências digitais que conectam pessoas e propósitos. Especialista em design de sistemas e arquitetura de redes premium. Atualmente focado em expandir a NzolaNet para novos horizontes.
+    {{ profile?.bio || 'Criando experiências digitais que conectam pessoas e propósitos. Especialista em design de sistemas e arquitetura de redes premium.' }}
   </p>
   
   <div class="flex flex-wrap gap-4 text-sm font-semibold text-gray-500 mt-auto">
@@ -15,7 +15,7 @@
       <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
       </svg>
-      <a href="#" class="text-primary hover:underline">nzolanet.com</a>
+      <span>{{ profile?.email ?? 'sem-email@nzolanet.com' }}</span>
     </div>
     <div class="flex items-center gap-1.5">
       <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">

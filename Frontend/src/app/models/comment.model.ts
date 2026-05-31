@@ -1,11 +1,11 @@
+import { User } from './user.model';
+
 export interface Comment {
     id: number;
     post_id: number;
     user_id: number;
-    author_name: string;
-    author_avatar: string | null;
-    body: string;
-    can_edit: boolean;
-    can_delete: boolean;
+    user?: User;
+    content: string;
+    likes_count: number;
     created_at: string;
 }

@@ -1,18 +1,17 @@
+import { User } from './user.model';
 import { Comment } from './comment.model';
 
 export interface Post {
     id: number;
     user_id: number;
-    author_name: string;
-    author_avatar: string | null;
+    user?: User;
     content: string;
-    image_url: string | null;
-    video_url: string | null;
-    bazes_count: number;
+    media_url: string | null;
+    media_type: 'image' | 'video' | null;
+    likes_count: number;
     comments_count: number;
-    has_bazed: boolean;
-    can_edit: boolean;
-    can_delete: boolean;
+    is_public: boolean;
+    location: string | null;
     created_at: string;
     comments?: Comment[];
 }

@@ -1,9 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FeedService } from '../../services/feed.service';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-criar-post',
@@ -13,30 +12,32 @@ import { AuthService } from '../../services/auth.service';
 })
 export class CriarPostComponent {
   private feedService = inject(FeedService);
-  private authService = inject(AuthService);
   private router = inject(Router);
 
-  currentUser = this.authService.getCurrentUser();
-  postText = '';
+  isPublic: boolean = true;
+  postText: string = '';
   selectedImage: string | ArrayBuffer | null = null;
   selectedMediaType: 'image' | 'video' | null = null;
-  selectedFile: File | null = null;
-  showEmojiPicker = false;
-  isPublishing = false;
+  showEmojiPicker: boolean = false;
+  isPublishing: boolean = false;
 
-  emojis: string[] = [':)', ':D', '<3', '+1', '!!', '?'];
+  emojis: string[] = ['😀', '😂', '😍', '🙏', '👍', '🔥', '🎉', '💡', '✨', '🙌', '🤔', '😎'];
 
-  publishPost(): void {
-    if (!this.postText.trim() && !this.selectedFile) {
-      return;
-    }
+  toggleVisibility() {
+    this.isPublic = !this.isPublic;
+  }
+
+  publishPost() {
+    if (!this.postText.trim() && !this.selectedImage) return;
 
     this.isPublishing = true;
-
+    
     this.feedService.createPost({
       content: this.postText,
-      image: this.selectedMediaType === 'image' ? this.selectedFile : null,
-      video: this.selectedMediaType === 'video' ? this.selectedFile : null
+      media_url: this.selectedImage as string,
+      media_type: this.selectedMediaType,
+      is_public: this.isPublic,
+      location: this.selectedLocation
     }).subscribe({
       next: () => {
         this.isPublishing = false;
@@ -49,38 +50,87 @@ export class CriarPostComponent {
     });
   }
 
-  triggerFileInput(fileInput: HTMLInputElement): void {
+  triggerFileInput(fileInput: HTMLInputElement) {
     fileInput.click();
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.type.startsWith('video/')) {
+        this.selectedMediaType = 'video';
+      } else {
+        this.selectedMediaType = 'image';
+      }
 
-    if (!file) {
-      return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          this.selectedImage = e.target.result;
+        }
+      };
+      reader.readAsDataURL(file);
     }
-
-    this.selectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
-    this.selectedFile = file;
-
-    const reader = new FileReader();
-    reader.onload = () => this.selectedImage = reader.result;
-    reader.readAsDataURL(file);
   }
 
-  removeImage(): void {
+  removeImage() {
     this.selectedImage = null;
     this.selectedMediaType = null;
-    this.selectedFile = null;
   }
 
-  toggleEmojiPicker(): void {
+  toggleEmojiPicker() {
     this.showEmojiPicker = !this.showEmojiPicker;
+    if (this.showEmojiPicker) {
+      this.showLocationPicker = false;
+      this.showGifPicker = false;
+    }
   }
 
-  addEmoji(emoji: string): void {
+  addEmoji(emoji: string) {
     this.postText += emoji;
     this.showEmojiPicker = false;
+  }
+
+  showLocationPicker: boolean = false;
+  locations: string[] = ['Luanda, Angola', 'Lisboa, Portugal', 'São Paulo, Brasil', 'Maputo, Moçambique'];
+  selectedLocation: string | null = null;
+
+  toggleLocationPicker() {
+    this.showLocationPicker = !this.showLocationPicker;
+    if (this.showLocationPicker) {
+      this.showEmojiPicker = false;
+      this.showGifPicker = false;
+    }
+  }
+
+  selectLocation(loc: string) {
+    this.selectedLocation = loc;
+    this.showLocationPicker = false;
+  }
+
+  removeLocation() {
+    this.selectedLocation = null;
+  }
+
+  showGifPicker: boolean = false;
+  gifs: string[] = [
+    'https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif',
+    'https://media.tenor.com/1-qA2hR3oKMAAAAC/good-morning.gif',
+    'https://media.tenor.com/bK1Np_0QpP4AAAAC/wow-cat.gif',
+    'https://media.tenor.com/Z4O8E1kE_5MAAAAC/dancing-duck.gif'
+  ];
+
+  toggleGifPicker() {
+    this.showGifPicker = !this.showGifPicker;
+    if (this.showGifPicker) {
+      this.showEmojiPicker = false;
+      this.showLocationPicker = false;
+    }
+  }
+
+  selectGif(gifUrl: string) {
+    this.selectedMediaType = 'image';
+    this.selectedImage = gifUrl;
+    this.showGifPicker = false;
   }
 }

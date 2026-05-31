@@ -9,6 +9,7 @@ class UpdateUserDTO
         public readonly ?string $name,
         public readonly ?string $bio,
         public readonly ?string $avatar_url,
+        public readonly ?string $cover_url,
         public readonly ?string $privacy,
     ) {}
 
@@ -19,6 +20,7 @@ class UpdateUserDTO
             name: $data['name'] ?? null,
             bio: $data['bio'] ?? null,
             avatar_url: $data['avatar_url'] ?? null,
+            cover_url: $data['cover_url'] ?? null,
             privacy: $data['privacy'] ?? null,
         );
     }

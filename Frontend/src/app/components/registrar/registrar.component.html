@@ -2,7 +2,7 @@
 <nav class="fixed inset-x-0 top-0 z-50 border-b border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/80 backdrop-blur-xl shadow-sm">
   <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
     <span class="text-lg font-bold text-blue-700">NzolaNet</span>
-    <a routerLink="/login" class="text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:text-blue-600">Entrar</a>
+    <a routerLink="/login" class="text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:text-blue-600">Sign In</a>
   </div>
 </nav>
 
@@ -27,8 +27,8 @@
       <div class="mb-10 flex flex-col items-center gap-4">
         <div class="relative group">
           <div class="flex h-32 w-32 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-slate-100 group-hover:border-blue-600 transition-colors overflow-hidden cursor-pointer" (click)="triggerFileInput()">
-            <img *ngIf="profileImage" [src]="profileImage" alt="Profile" class="w-full h-full object-cover" />
-            <svg *ngIf="!profileImage" class="h-16 w-16 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <img *ngIf="avatar_url" [src]="avatar_url " alt="Profile" class="w-full h-full object-cover" />
+            <svg *ngIf="!avatar_url" class="h-16 w-16 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
             </svg>
           </div>
@@ -38,6 +38,7 @@
             accept="image/*"
             (change)="onFileSelected($event)"
             class="hidden"
+
           />
         </div>
         <div class="text-center">
@@ -60,6 +61,23 @@
             class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-100"
             required
           />
+        </div>
+
+        <!-- Username -->
+        <div>
+          <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Bio</label>
+          <div class="relative mt-2">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">&#64;</span>
+            <input
+              id="bio"
+              name="bio"
+              [(ngModel)]="bio"
+              type="text"
+              placeholder="descricao breve sobre voce"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 dark:bg-slate-900 py-3 pl-8 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-100"
+              required
+            />
+          </div>
         </div>
 
         <!-- Professional Email -->
@@ -102,7 +120,7 @@
         <div class="flex items-start gap-3 pt-2">
           <input type="checkbox" id="terms" name="termsAccepted" [(ngModel)]="termsAccepted" class="mt-1 h-5 w-5 rounded border-slate-300 bg-white dark:bg-slate-800 text-blue-600 transition focus:ring-2 focus:ring-blue-100" />
           <label for="terms" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            Aceito os <a href="#" class="text-blue-600 hover:underline">Termos de Servico</a> e a <a href="#" class="text-blue-600 hover:underline">Politica de Privacidade</a> da NzolaNet.
+            I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a> regarding my data craftsmanship on NzolaNet.
           </label>
         </div>
 
@@ -121,7 +139,7 @@
       <div class="mt-8 text-center">
         <p class="text-sm text-slate-600 dark:text-slate-300">
           Already have an account?
-          <a routerLink="/login" class="font-semibold text-blue-600 transition hover:underline">Entrar</a>
+          <a routerLink="/login" class="font-semibold text-blue-600 transition hover:underline">Sign in</a>
         </p>
       </div>
     </div>
@@ -134,7 +152,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <h3 class="text-sm font-semibold text-slate-900">Privacidade em primeiro lugar</h3>
+        <h3 class="text-sm font-semibold text-slate-900">Privacy First</h3>
         <p class="mt-2 text-xs text-slate-600 dark:text-slate-300">Your data is encrypted and never sold.</p>
       </div>
       <div class="rounded-2xl border border-slate-200 dark:border-slate-700/70 bg-white dark:bg-slate-800 p-6 shadow-sm">
@@ -164,10 +182,10 @@
       <div class="flex flex-col items-start justify-between gap-8 sm:flex-row">
         <span class="text-sm font-medium text-slate-600 dark:text-slate-300">© 2024 NzolaNet. Digital Craftsmanship.</span>
         <div class="flex gap-8">
-          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Politica de Privacidade</a>
-          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Termos de Servico</a>
-          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Centro de ajuda</a>
-          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Definicoes de cookies</a>
+          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Privacy Policy</a>
+          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Terms of Service</a>
+          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Help Center</a>
+          <a href="#" class="text-sm text-slate-600 dark:text-slate-300 transition hover:text-slate-900">Cookie Settings</a>
         </div>
       </div>
     </div>

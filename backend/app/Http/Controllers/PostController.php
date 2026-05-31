@@ -23,18 +23,7 @@ class PostController extends Controller
         $posts = $this->postService->getAll();
 
         // Converte modelos em DTOs para controlar o formato enviado ao frontend.
-        $user = request()->user();
-        $posts->through(fn($post) => PostResponseDTO::fromModel($post, (int) $user->id, $user->isAdmin())->toArray());
-
-        return response()->json($posts);
-    }
-
-    // GET /api/users/{userId}/posts
-    public function byUser(Request $request, string $userId): JsonResponse
-    {
-        $posts = $this->postService->getByUser($userId);
-
-        $posts->through(fn($post) => PostResponseDTO::fromModel($post, (int) $request->user()->id, $request->user()->isAdmin())->toArray());
+        $posts->through(fn($post) => PostResponseDTO::fromModel($post)->toArray());
 
         return response()->json($posts);
     }
@@ -45,7 +34,7 @@ class PostController extends Controller
         // Feed personalizado: apenas publicacoes de utilizadores seguidos.
         $posts = $this->postService->getFeed((string) $request->user()->id);
 
-        $posts->through(fn($post) => PostResponseDTO::fromModel($post, (int) $request->user()->id, $request->user()->isAdmin())->toArray());
+        $posts->through(fn($post) => PostResponseDTO::fromModel($post)->toArray());
 
         return response()->json($posts);
     }
@@ -55,7 +44,7 @@ class PostController extends Controller
     {
         try {
             // O service valida existencia e devolve o DTO de resposta.
-            $post = $this->postService->getById($id, (int) request()->user()->id, request()->user()->isAdmin());
+            $post = $this->postService->getById($id);
 
             return response()->json($post->toArray());
 
@@ -100,7 +89,7 @@ class PostController extends Controller
 
         try {
             $dto = CreatePostDTO::fromArray($data);
-            $post = $this->postService->create($dto, (int) $request->user()->id, $request->user()->isAdmin());
+            $post = $this->postService->create($dto);
 
             return response()->json([
                 'message' => 'Publicacao criada com sucesso.',
@@ -128,7 +117,7 @@ class PostController extends Controller
             // Confirma autoria antes de fazer upload, evitando ficheiros orfaos.
             $existingPost = $this->postService->getById($id);
 
-            if (!$request->user()->isAdmin() && (int) $existingPost->user_id !== (int) $request->user()->id) {
+            if ((int) $existingPost->user_id !== (int) $request->user()->id) {
                 return response()->json([
                     'message' => 'Sem permissao para editar esta publicacao.',
                 ], 403);
@@ -159,7 +148,7 @@ class PostController extends Controller
 
         try {
             $dto = UpdatePostDTO::fromArray($data);
-            $post = $this->postService->update($id, (string) $request->user()->id, $dto, $request->user()->isAdmin());
+            $post = $this->postService->update($id, (string) $request->user()->id, $dto);
 
             return response()->json([
                 'message' => 'Publicacao actualizada com sucesso.',
@@ -178,7 +167,7 @@ class PostController extends Controller
     {
         try {
             // O service garante que so o autor apaga a publicacao.
-            $this->postService->delete($id, (string) $request->user()->id, $request->user()->isAdmin());
+            $this->postService->delete($id, (string) $request->user()->id);
 
             return response()->json([
                 'message' => 'Publicacao eliminada com sucesso.',

@@ -9,30 +9,36 @@
                 <button routerLink="/app/home" class="p-2 -ml-2 hover:bg-surface-container-high dark:hover:bg-slate-700 rounded-full transition-all text-on-surface-variant dark:text-slate-300">
                     <span class="material-symbols-outlined">close</span>
                 </button>
-                <h2 class="font-h2 text-h2 text-on-surface dark:text-white font-bold">Criar publicacao</h2>
+                <h2 class="font-h2 text-h2 text-on-surface dark:text-white font-bold">Create Post</h2>
             </div>
             
-            <div class="flex items-center gap-2"></div>
+            <div class="flex items-center gap-2">
+                <!-- Visibility Selector -->
+                <button (click)="toggleVisibility()"
+                    class="flex items-center gap-2 px-3 py-1.5 bg-secondary-container dark:bg-slate-700 text-on-secondary-fixed-variant dark:text-slate-200 rounded-full font-label-md text-label-md hover:brightness-95 dark:hover:brightness-110 transition-all">
+                    <span class="material-symbols-outlined text-[18px]">{{ isPublic ? 'public' : 'lock' }}</span>
+                    <span>{{ isPublic ? 'Public' : 'Private' }}</span>
+                    <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                </button>
+            </div>
         </div>
 
         <!-- Content Area -->
-        <div class="px-6 py-6">
+        <div class="px-6 py-6 overflow-y-auto max-h-[614px]">
             <!-- User Identity -->
             <div class="flex items-center gap-4 mb-stack-md">
-                <ng-container *ngIf="currentUser?.avatar_url; else createAvatarFallback">
-                    <img [alt]="currentUser?.name || 'Utilizador'" class="w-12 h-12 rounded-full object-cover"
-                        [src]="currentUser?.avatar_url" />
-                </ng-container>
-                <ng-template #createAvatarFallback>
-                    <div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-[26px]">person</span>
-                    </div>
-                </ng-template>
+                <img alt="User" class="w-12 h-12 rounded-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdzPi0vCSni9Es6YD6Y_Z0oUy59_QqDDDTuBKl0NImYvsxiJ1NIFKjnsOyQY8VpqzTVLPBNE8xtzlZOUJ79lPvHaEubQR-xKIzIDtkyNUnqcZlBm10U2DaRLZALKwDuaVCkBu8NJTzj6zbiA9yGidzCkv-wGPZLX5BXiLlotnyrj5XhRq-co9vDzWpnzNVIsG2wVMtZfn7lv95eSMmWjac7UQx2wqEfNS2i7gViPTm60h7ORwkgd4p2FiK2bmlCGfrwALv0_j0coU" />
                 <div>
                     <p class="font-label-md text-label-md text-on-surface dark:text-white font-bold flex items-center flex-wrap">
-                        {{ currentUser?.name || 'Utilizador' }}
+                        Marcus Oliveira
+                        <span *ngIf="selectedLocation" class="text-primary text-sm font-normal ml-2 flex items-center bg-primary/10 px-2 py-0.5 rounded-full">
+                            <span class="material-symbols-outlined text-[14px] mr-1">location_on</span>
+                            {{ selectedLocation }}
+                            <button (click)="removeLocation()" class="ml-1 hover:text-red-500 rounded-full flex items-center justify-center transition-all"><span class="material-symbols-outlined text-[14px]">close</span></button>
+                        </span>
                     </p>
-                    <p class="font-label-sm text-label-sm text-on-surface-variant dark:text-slate-400">Publicacao com texto, imagem ou video</p>
+                    <p class="font-label-sm text-label-sm text-on-surface-variant dark:text-slate-400">&#64;marcus_nzola</p>
                 </div>
             </div>
 
@@ -41,7 +47,7 @@
                 <textarea
                     [(ngModel)]="postText"
                     class="w-full bg-transparent border-none focus:ring-0 text-body-lg font-body-lg text-on-surface dark:text-white placeholder:text-on-surface-variant/50 dark:placeholder:text-slate-500 resize-none p-0 outline-none"
-                    placeholder="O que estas a pensar?" rows="4"></textarea>
+                    placeholder="O que estás a pensar?" rows="4"></textarea>
                 
                 <!-- Emoji Picker Popup -->
                 <div *ngIf="showEmojiPicker" class="absolute z-10 bottom-full left-0 mb-2 bg-surface-container-highest dark:bg-slate-700 rounded-xl shadow-lg border border-outline-variant dark:border-slate-600 p-2 w-[240px]">
@@ -66,7 +72,7 @@
                         <span class="material-symbols-outlined text-primary"
                             style="font-variation-settings: 'FILL' 0;">video_call</span>
                     </div>
-                    <p class="font-label-md text-label-md text-on-surface-variant dark:text-slate-400">Adicionar video</p>
+                    <p class="font-label-md text-label-md text-on-surface-variant dark:text-slate-400">Add video</p>
                 </div>
                 
                 <!-- Image/Video Preview -->
@@ -86,12 +92,39 @@
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <!-- Tool Icons -->
                 <div class="flex items-center gap-1 relative">
-                    <button (click)="triggerFileInput(imageInput)" class="p-2.5 rounded-full text-primary hover:bg-primary-fixed dark:hover:bg-primary/20 transition-all active:scale-90" title="Adicionar imagem">
+                    <button (click)="triggerFileInput(imageInput)" class="p-2.5 rounded-full text-primary hover:bg-primary-fixed dark:hover:bg-primary/20 transition-all active:scale-90" title="Add Image">
                         <span class="material-symbols-outlined" data-icon="image">image</span>
+                    </button>
+                    <button (click)="toggleGifPicker()" class="p-2.5 rounded-full text-primary hover:bg-primary-fixed dark:hover:bg-primary/20 transition-all active:scale-90" title="GIF">
+                        <span class="material-symbols-outlined" data-icon="gif_box">gif_box</span>
                     </button>
                     <button (click)="toggleEmojiPicker()" class="p-2.5 rounded-full text-primary hover:bg-primary-fixed dark:hover:bg-primary/20 transition-all active:scale-90" title="Emoji">
                         <span class="material-symbols-outlined" data-icon="mood">mood</span>
                     </button>
+                    <button class="p-2.5 rounded-full text-primary hover:bg-primary-fixed dark:hover:bg-primary/20 transition-all active:scale-90" title="Poll">
+                        <span class="material-symbols-outlined" data-icon="ballot">ballot</span>
+                    </button>
+                    <div class="h-6 w-px bg-outline-variant dark:bg-slate-700 mx-2"></div>
+                    <button (click)="toggleLocationPicker()" class="p-2.5 rounded-full text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-high dark:hover:bg-slate-700 transition-all active:scale-90" title="Location">
+                        <span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+                    </button>
+
+                    <!-- Location Picker Popup -->
+                    <div *ngIf="showLocationPicker" class="absolute z-10 bottom-full left-0 ml-32 mb-2 bg-surface-container-highest dark:bg-slate-700 rounded-xl shadow-lg border border-outline-variant dark:border-slate-600 p-2 w-[200px] flex flex-col gap-1">
+                        <button *ngFor="let loc of locations" (click)="selectLocation(loc)" class="text-sm text-left text-on-surface dark:text-white hover:bg-surface-container-high dark:hover:bg-slate-600 px-3 py-2 rounded-lg transition-all flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant dark:text-slate-400">location_on</span>
+                            {{ loc }}
+                        </button>
+                    </div>
+
+                    <!-- GIF Picker Popup -->
+                    <div *ngIf="showGifPicker" class="absolute z-10 bottom-full left-0 ml-8 mb-2 bg-surface-container-highest dark:bg-slate-700 rounded-xl shadow-lg border border-outline-variant dark:border-slate-600 p-2 w-[300px] h-[250px] overflow-y-auto">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button *ngFor="let gifUrl of gifs" (click)="selectGif(gifUrl)" class="w-full h-[100px] rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all">
+                                <img [src]="gifUrl" alt="GIF" class="w-full h-full object-cover pointer-events-none" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Post Button -->

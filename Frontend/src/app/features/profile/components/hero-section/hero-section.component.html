@@ -1,7 +1,7 @@
 <header class="relative w-full max-w-5xl mx-auto">
   <!-- Cover Image -->
   <div class="w-full h-48 md:h-64 lg:h-[300px] rounded-3xl overflow-hidden shadow-sm">
-    <img src="https://i.pinimg.com/originals/18/66/c1/1866c184a7d1b635ad8c1c6268d86822.jpg" alt="Cover" class="w-full h-full object-cover">
+    <img [src]="profile?.cover_url ?? 'https://i.pinimg.com/originals/18/66/c1/1866c184a7d1b635ad8c1c6268d86822.jpg'" alt="Cover" class="w-full h-full object-cover">
   </div>
 
   <!-- Profile Info Area -->
@@ -10,13 +10,13 @@
     <div class="flex flex-col md:flex-row items-start md:items-end gap-6">
       <!-- Avatar -->
       <div class="w-32 h-32 md:w-36 md:h-36 rounded-full border-4 border-[#f7f9fb] overflow-hidden bg-white dark:bg-slate-800 shadow-sm flex-shrink-0">
-        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80" alt="Avatar" class="w-full h-full object-cover">
+        <img [src]="profile?.avatar_url ?? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80'" alt="nao carregada" class="w-full h-full object-cover">
       </div>
 
       <!-- Name & Role -->
       <div class="pb-2">
-        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Alexandre Nzola</h1>
-        <p class="text-gray-500 font-medium mt-1">&#64;alexnzola &bull; Digital Architect</p>
+        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ profile?.name ?? 'Usuário Nzola' }}</h1>
+        <p class="text-gray-500 font-medium mt-1"> {{ profile?.privacy === 'private' ? 'Perfil privado' : 'Perfil público' }}</p>
       </div>
     </div>
 

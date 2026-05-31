@@ -3,7 +3,6 @@ import { RouterLink, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { UserService } from '../../services/user.service';
 
 @Component({
   standalone: true,
@@ -14,19 +13,18 @@ import { UserService } from '../../services/user.service';
 })
 export class RegistrarComponent {
   private authService = inject(AuthService);
-  private userService = inject(UserService);
   private router = inject(Router);
-
+  avatar_url= '';
   fullName = '';
+  bio = '';
   email = '';
   password = '';
   termsAccepted = false;
   profileImage: string | null = null;
-  selectedAvatarFile: File | null = null;
   isLoading = false;
 
   onSubmit(): void {
-    if (!this.fullName || !this.email || !this.password) {
+    if (!this.fullName || !this.bio || !this.email || !this.password) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
@@ -37,27 +35,14 @@ export class RegistrarComponent {
 
     this.isLoading = true;
     this.authService.register({
-      name: this.fullName,
+      avatar_url:this.avatar_url,
+      fullName: this.fullName,
+      bio: this.bio,
       email: this.email,
       password: this.password,
-      password_confirmation: this.password
+      profileImage: this.profileImage
     }).subscribe({
       next: (res) => {
-        if (res.success && this.selectedAvatarFile) {
-          this.userService.updateAvatar(res.user.id, this.selectedAvatarFile).subscribe({
-            next: () => {
-              this.isLoading = false;
-              this.router.navigate(['/app/home']);
-            },
-            error: (err) => {
-              this.isLoading = false;
-              console.error(err);
-              this.router.navigate(['/app/home']);
-            }
-          });
-          return;
-        }
-
         this.isLoading = false;
         if (res.success) {
           this.router.navigate(['/app/home']);
@@ -87,8 +72,6 @@ export class RegistrarComponent {
         alert('Por favor, selecione um arquivo de imagem.');
         return;
       }
-
-      this.selectedAvatarFile = file;
 
       // Ler arquivo e criar preview
       const reader = new FileReader();

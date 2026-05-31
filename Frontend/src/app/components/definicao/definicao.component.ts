@@ -1,23 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
-import { User } from '../../models/user.model';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-definicao',
-  imports: [CommonModule, RouterLink],
+  imports: [ ],
   templateUrl: './definicao.component.html',
   styleUrl: './definicao.component.css'
 })
 export class DefinicaoComponent implements OnInit {
   private authService = inject(AuthService);
   isDarkMode = false;
-  user: User | null = null;
 
   ngOnInit() {
     this.isDarkMode = document.documentElement.classList.contains('dark');
-    this.user = this.authService.getCurrentUser();
   }
 
   toggleDarkMode() {

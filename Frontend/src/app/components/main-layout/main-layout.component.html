@@ -1,10 +1,10 @@
-<div class="min-h-screen w-full overflow-x-hidden bg-background dark:bg-slate-900 flex text-on-surface dark:text-white transition-colors duration-300">
+<div class="min-h-screen bg-background dark:bg-slate-900 flex justify-center text-on-surface dark:text-white transition-colors duration-300">
 
   <!-- Left Sidebar (Desktop) -->
-  <app-sidebar class="hidden lg:block w-[280px] sticky top-0 min-h-screen shrink-0 border-r border-outline-variant/10 dark:border-slate-800"></app-sidebar>
+  <app-sidebar class="hidden lg:block w-[280px] sticky top-0 h-screen shrink-0 border-r border-outline-variant/10 dark:border-slate-800"></app-sidebar>
 
   <!-- Main Content Container -->
-  <main class="flex-1 w-full min-w-0 overflow-visible">
+  <main class="flex-1 max-w-[1000px] w-full min-w-0">
     <router-outlet></router-outlet>
   </main>
 

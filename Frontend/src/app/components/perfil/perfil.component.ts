@@ -1,99 +1,73 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { RouterLink, RouterModule } from '@angular/router';
-import { Post } from '../../models/post.model';
-import { User } from '../../models/user.model';
+import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+import { PostsGridComponent } from '../../features/profile/components/posts-grid/posts-grid.component';
+import { HeroSectionComponent } from '../../features/profile/components/hero-section/hero-section.component';
+import { AboutComponent } from '../../features/profile/components/bio-section/about.component';
+import { TabsComponent } from '../../features/profile/components/tabs/tabs.component';
+import { StatsCardComponent } from '../../features/profile/components/stats-card/stats-card.component';
+import { UserService, UserProfile } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
-import { FeedService } from '../../services/feed.service';
-import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-perfil',
-  standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, RouterModule],
-  templateUrl: './perfil.component.html'
+  standalone:true,
+
+  imports:[
+    CommonModule,
+    HeroSectionComponent,
+    AboutComponent,
+    StatsCardComponent,
+    TabsComponent,
+    PostsGridComponent
+  ],
+
+  templateUrl:'./perfil.component.html'
 })
 export class PerfilComponent implements OnInit {
-  private authService = inject(AuthService);
   private userService = inject(UserService);
-  private feedService = inject(FeedService);
-  private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
 
-  currentUser = this.authService.getCurrentUser();
-  user: User | null = null;
-  posts: Post[] = [];
+  profile: UserProfile | null = null;
   followersCount = 0;
   followingCount = 0;
-  isLoading = true;
-  error = '';
-  isOwnProfile = false;
+  errorMessage = '';
+  loading = true;
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((params) => {
-      this.currentUser = this.authService.getCurrentUser();
-
-      if (!this.currentUser) {
-        this.isLoading = false;
-        return;
-      }
-
-      const routeUserId = Number(params.get('id') || this.currentUser.id);
-      this.loadProfile(routeUserId);
-    });
+    this.loadProfile();
   }
 
-  loadProfile(userId: number): void {
-    this.isLoading = true;
-    this.error = '';
-    this.user = null;
-    this.posts = [];
-    this.followersCount = 0;
-    this.followingCount = 0;
-    this.isOwnProfile = this.currentUser?.id === userId;
+  private loadProfile(): void {
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) {
+      this.errorMessage = 'Usuário não autenticado.';
+      this.loading = false;
+      return;
+    }
 
-    this.userService.getUser(userId).subscribe({
-      next: (user) => {
-        this.user = user;
-        this.isOwnProfile = this.currentUser?.id === user.id;
-
-        if (this.isOwnProfile) {
-          this.authService.setCurrentUser(user);
-        }
-
-        this.loadProfileStats(user.id);
-        this.loadPosts(user.id);
+    this.userService.getProfile(userId).subscribe({
+      next: (profile) => {
+        this.profile = profile;
+        this.followersCount = profile.followers_count ?? 0;
+        this.followingCount = profile.following_count ?? 0;
+        this.loading = false;
       },
-      error: (error) => {
-        console.error('Error loading profile', error);
-        this.error = error?.error?.message || 'Nao foi possivel carregar este perfil.';
-        this.isLoading = false;
+      error: (err) => {
+        console.error('Erro ao carregar perfil:', err);
+        this.errorMessage = 'Não foi possível carregar o perfil.';
+        this.loading = false;
       }
     });
-  }
 
-  private loadProfileStats(userId: number): void {
     this.userService.getFollowers(userId).subscribe({
       next: (followers) => this.followersCount = followers.length,
-      error: (error) => console.error('Error loading followers', error)
+      error: (err) => console.error('Erro ao carregar seguidores:', err)
     });
 
     this.userService.getFollowing(userId).subscribe({
       next: (following) => this.followingCount = following.length,
-      error: (error) => console.error('Error loading following', error)
-    });
-  }
-
-  private loadPosts(userId: number): void {
-    this.feedService.getUserPosts(userId).subscribe({
-      next: (response) => {
-        this.posts = response.data;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading profile posts', error);
-        this.isLoading = false;
-      }
+      error: (err) => console.error('Erro ao carregar seguindo:', err)
     });
   }
 }

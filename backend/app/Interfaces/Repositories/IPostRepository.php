@@ -15,5 +15,4 @@ interface IPostRepository
     public function delete(string $id): bool;
     public function getAllPaginated(): LengthAwarePaginator;
     public function getFeedForUser(string $userId): LengthAwarePaginator;
-    public function getByUser(string $userId): LengthAwarePaginator;
 }

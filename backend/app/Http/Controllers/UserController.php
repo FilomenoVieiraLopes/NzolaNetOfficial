@@ -14,18 +14,6 @@ class UserController extends Controller
         private readonly IUserService $userService
     ) {}
 
-    // GET /api/users/search?q=termo
-    public function search(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'q' => 'nullable|string|max:100',
-        ]);
-
-        return response()->json(
-            $this->userService->search($validated['q'] ?? '')
-        );
-    }
-
     // GET /api/users/{id}
     public function show(Request $request, string $id): JsonResponse
     {
@@ -54,9 +42,11 @@ class UserController extends Controller
 
         // Apenas estes campos sao editaveis pela API publica.
         $validated = $request->validate([
-            'name'    => 'sometimes|string|max:255',
-            'bio'     => 'sometimes|nullable|string|max:500',
-            'privacy' => 'sometimes|in:public,private',
+            'name'      => 'sometimes|string|max:255',
+            'bio'       => 'sometimes|string|max:500',
+            'avatar_url'=> 'sometimes|nullable|url',
+            'cover_url' => 'sometimes|nullable|url',
+            'privacy'   => 'sometimes|in:public,private',
         ]);
 
         try {
@@ -100,7 +90,6 @@ class UserController extends Controller
             return response()->json([
                 'message'    => 'Avatar actualizado com sucesso.',
                 'avatar_url' => $user->avatar_url,
-                'user'       => $user->toArray(),
             ]);
 
         } catch (\Exception $e) {

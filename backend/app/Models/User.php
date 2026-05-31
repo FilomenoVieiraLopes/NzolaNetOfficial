@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar_url',
+        'cover_url',
         'bio',
         'privacy',
         'role',

@@ -40,8 +40,6 @@ class BazeService implements IBazeService
             $this->notificationRepository->create(
                 $post->user_id,
                 'baze',
-                (string) $baze->id,
-                $userId,
                 $postId
             );
         }

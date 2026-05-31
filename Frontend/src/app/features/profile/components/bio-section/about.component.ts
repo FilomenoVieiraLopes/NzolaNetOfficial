@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import { UserProfile } from '../../../../services/user.service';
 
 @Component({
   selector: 'app-about',
@@ -6,5 +7,6 @@ import { Component } from '@angular/core';
   templateUrl: './about.component.html'
 })
 export class AboutComponent {
+  @Input() profile: UserProfile | null = null;
 
 }

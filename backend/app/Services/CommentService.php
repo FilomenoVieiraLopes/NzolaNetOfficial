@@ -19,7 +19,7 @@ class CommentService implements ICommentService
         private readonly INotificationRepository $notificationRepository,
     ) {}
 
-    public function getByPost(string $postId, ?int $viewerId = null, bool $viewerIsAdmin = false): array
+    public function getByPost(string $postId): array
     {
         // Nao retorna lista vazia para post inexistente; devolve 404 controlado.
         if (!$this->postRepository->findById($postId)) {
@@ -28,12 +28,12 @@ class CommentService implements ICommentService
 
         $comments = $this->commentRepository->getByPost($postId);
 
-        return $comments->map(function ($comment) use ($viewerId, $viewerIsAdmin) {
-            return CommentResponseDTO::fromModel($comment, $viewerId, $viewerIsAdmin)->toArray();
+        return $comments->map(function ($comment) {
+            return CommentResponseDTO::fromModel($comment)->toArray();
         })->toArray();
     }
 
-    public function create(CreateCommentDTO $dto, ?int $viewerId = null, bool $viewerIsAdmin = false): CommentResponseDTO
+    public function create(CreateCommentDTO $dto): CommentResponseDTO
     {
         // Comentario so pode existir associado a uma publicacao real.
         $post = $this->postRepository->findById($dto->post_id);
@@ -49,16 +49,14 @@ class CommentService implements ICommentService
             $this->notificationRepository->create(
                 $post->user_id,
                 'comment',
-                (string) $comment->id,
-                (string) $dto->user_id,
-                (string) $post->id
+                $comment->id
             );
         }
 
-        return CommentResponseDTO::fromModel($comment, $viewerId, $viewerIsAdmin);
+        return CommentResponseDTO::fromModel($comment);
     }
 
-    public function update(string $id, string $userId, UpdateCommentDTO $dto, bool $isAdmin = false): CommentResponseDTO
+    public function update(string $id, string $userId, UpdateCommentDTO $dto): CommentResponseDTO
     {
         $comment = $this->commentRepository->findById($id);
 
@@ -73,7 +71,7 @@ class CommentService implements ICommentService
 
         $updated = $this->commentRepository->update($id, $dto);
 
-        return CommentResponseDTO::fromModel($updated, (int) $userId, $isAdmin);
+        return CommentResponseDTO::fromModel($updated);
     }
 
     public function delete(string $id, string $userId, bool $isAdmin = false): void

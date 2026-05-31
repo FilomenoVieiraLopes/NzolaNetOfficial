@@ -6,7 +6,6 @@ use App\DTOs\User\RegisterUserDTO;
 use App\DTOs\User\UpdateUserDTO;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class UserRepository implements IUserRepository
@@ -23,21 +22,12 @@ class UserRepository implements IUserRepository
         return User::where('email', $email)->first();
     }
 
-    public function search(string $term): Collection
-    {
-        // Pesquisa simples para encontrar perfis por nome ou email.
-        return User::query()
-            ->where('name', 'like', "%{$term}%")
-            ->orWhere('email', 'like', "%{$term}%")
-            ->orderBy('name')
-            ->limit(20)
-            ->get();
-    }
-
     public function create(RegisterUserDTO $dto): User
     {
         // Hash::make garante que a senha nunca e guardada em texto puro.
         return User::create([
+            'avatar_url' => $dto->avatar_url,
+            'cover_url'  => $dto->cover_url,
             'name'     => $dto->name,
             'email'    => $dto->email,
             'password' => Hash::make($dto->password),
@@ -50,9 +40,11 @@ class UserRepository implements IUserRepository
 
         // array_filter remove campos nao enviados para nao apagar dados existentes.
         $user->update(array_filter([
-            'name'    => $dto->name,
-            'bio'     => $dto->bio,
-            'privacy' => $dto->privacy,
+            'name'      => $dto->name,
+            'bio'       => $dto->bio,
+            'avatar_url'=> $dto->avatar_url,
+            'cover_url' => $dto->cover_url,
+            'privacy'   => $dto->privacy,
         ], fn($value) => !is_null($value)));
 
         return $user->fresh();

@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { UserProfile } from '../../../../services/user.service';
 
 @Component({
   selector: 'app-hero',
@@ -9,5 +10,5 @@ import { RouterLink } from '@angular/router';
   styleUrl: './hero-section.component.css'
 })
 export class HeroSectionComponent {
-
+  @Input() profile: UserProfile | null = null;
 }

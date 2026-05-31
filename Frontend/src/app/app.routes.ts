@@ -6,8 +6,6 @@ import { HomeComponent } from './components/home/home.component';
 import { LandingPageComponent } from './components/landing-page/landing-page.component';
 import { RegistrarComponent } from './components/registrar/registrar.component';
 import { LoginComponent } from './components/login/login.component';
-import { RecuperarSenhaComponent } from './components/recuperar-senha/recuperar-senha.component';
-import { RedefinirSenhaComponent } from './components/redefinir-senha/redefinir-senha.component';
 import { NotificacaoComponent } from './components/notificacao/notificacao.component';
 import { EditarPerfilComponent } from './components/editar-perfil/editar-perfil.component';
 import { DefinicaoComponent } from './components/definicao/definicao.component';
@@ -36,16 +34,6 @@ export const routes: Routes = [
     component: LoginComponent,
     canActivate: [noAuthGuard]
   },
-  {
-    path: 'recuperar-senha',
-    component: RecuperarSenhaComponent,
-    canActivate: [noAuthGuard]
-  },
-  {
-    path: 'redefinir-senha',
-    component: RedefinirSenhaComponent,
-    canActivate: [noAuthGuard]
-  },
 
 
   // Sistema (Com Sidebar/Navbar do MainLayout)
@@ -68,10 +56,6 @@ export const routes: Routes = [
       },
       {
         path: 'perfil',
-        component: PerfilComponent,
-      },
-      {
-        path: 'perfil/:id',
         component: PerfilComponent,
       },
       {
