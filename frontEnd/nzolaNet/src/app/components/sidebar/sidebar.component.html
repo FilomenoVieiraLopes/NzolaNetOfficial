@@ -1,0 +1,51 @@
+<aside class="h-full flex flex-col py-8 px-6 bg-background dark:bg-slate-900">
+  <div class="mb-10 px-2">
+    <h1 class="text-[28px] font-black text-primary tracking-tight font-display">NzolaNet</h1>
+    <p class="text-sm text-on-surface-variant dark:text-slate-300 font-medium mt-1">Premium Network</p>
+  </div>
+
+  <nav class="space-y-1 flex-1">
+    <a routerLink="/app/home" routerLinkActive="bg-primary text-on-primary font-bold shadow-md" [routerLinkActiveOptions]="{ exact: true }" class="flex items-center gap-4 rounded-full px-5 py-3.5 text-[15px] font-medium text-on-surface-variant dark:text-slate-300 hover:bg-surface-container dark:hover:bg-slate-700 transition-colors">
+      <span class="material-symbols-outlined text-[24px]">home</span>
+      Home Feed
+    </a>
+
+   
+    <a routerLink="/app/notificacoes" routerLinkActive="bg-primary text-on-primary font-bold shadow-md" class="flex items-center gap-4 rounded-full px-5 py-3.5 text-[15px] font-medium text-on-surface-variant dark:text-slate-300 hover:bg-surface-container dark:hover:bg-slate-700 transition-colors">
+      <span class="material-symbols-outlined text-[24px]">notifications_none</span>
+      Notifications
+    </a>
+
+    <a routerLink="/app/explorar" routerLinkActive="bg-primary text-on-primary font-bold shadow-md" class="flex items-center gap-4 rounded-full px-5 py-3.5 text-[15px] font-medium text-on-surface-variant dark:text-slate-300 hover:bg-surface-container dark:hover:bg-slate-700 transition-colors">
+      <span class="material-symbols-outlined text-[24px]">search</span>
+      Explore
+    </a>
+
+    <a routerLink="/app/perfil" routerLinkActive="bg-primary text-on-primary font-bold shadow-md" class="flex items-center gap-4 rounded-full px-5 py-3.5 text-[15px] font-medium text-on-surface-variant dark:text-slate-300 hover:bg-surface-container dark:hover:bg-slate-700 transition-colors">
+      <span class="material-symbols-outlined text-[24px]">person_outline</span>
+      Prfil
+    </a>
+
+    <a routerLink="/app/definicao" class="flex items-center gap-4 rounded-full px-5 py-3.5 text-[15px] font-medium text-on-surface-variant dark:text-slate-300 hover:bg-surface-container dark:hover:bg-slate-700 transition-colors cursor-pointer">
+      <span class="material-symbols-outlined text-[24px]">settings</span>
+      Configurações
+    </a>
+
+    <div class="pt-6">
+      <button routerLink="/app/criar-post" class="w-full rounded-full bg-primary px-5 py-3.5 text-[15px] font-bold text-on-primary shadow-[0_8px_16px_-4px_rgba(0,74,198,0.4)] transition-transform active:scale-95 hover:bg-blue-700">
+        Create Post
+      </button>
+    </div>
+  </nav>
+
+  <!-- User Profile Snippet -->
+  <div class="mt-auto pt-6">
+    <div class="flex items-center gap-3 bg-surface-container-low dark:bg-slate-800 rounded-2xl p-3 hover:bg-surface-container dark:hover:bg-slate-700 transition-colors cursor-pointer">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ0OV3c5BeDlQGvmGrQChKuY4Y1sN4sBz_CPWemC4J3va2Co-nU4Mha0CdkKCn1BwdpzEEbsfYrXgDABUT0_BNnyeaujuo3KOZHgq_V8p9kZPvcb9SJH-UeW2ZPl_3jXH1cmB40bDWuDSwHSaY5DLiA0r1kDihcsW8QO9b5P8KJFcAlrREaW76XwqdonfWFDOd6VssjCKqYdeCZ0j34JZ0FDiKsdcApsnPSYs8kR2wyheNsJbly8MtooepXWtk92KQV2KSTZ5l304" alt="Elena Rodriguez" class="w-10 h-10 rounded-full object-cover">
+      <div class="flex-1 overflow-hidden">
+        <p class="font-bold text-[14px] text-on-surface dark:text-white truncate">Elena Rodriguez</p>
+        <p class="text-[13px] text-on-surface-variant dark:text-slate-300 truncate">&#64;erodriguez</p>
+      </div>
+    </div>
+  </div>
+</aside>
