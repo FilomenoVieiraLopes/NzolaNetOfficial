@@ -9,6 +9,7 @@ Este repositorio contem o backend. O frontend Angular deve consumir os endpoints
 - [Arquitetura e requisitos](docs/ARCHITECTURE.md)
 - [Endpoints da API](docs/API.md)
 - [Guia para ligar com Angular](docs/ANGULAR.md)
+- [Guia visual para testar endpoints](docs/TESTING_ENDPOINTS.md)
 
 ## Stack tecnica
 
