@@ -1,0 +1,58 @@
+<main class="w-full">
+  <header class="sticky top-0 z-30 bg-surface dark:bg-slate-900/80 backdrop-blur-xl border-b border-outline-variant px-gutter h-20 flex items-center justify-between">
+    <h1 class="font-h2 text-h2 font-bold tracking-tight text-on-surface dark:text-white">Editar perfil</h1>
+    <div class="flex items-center gap-stack-md">
+      <button routerLink="/app/perfil" class="hidden md:block font-label-md text-secondary dark:text-slate-400 hover:text-primary px-4 py-2 transition-colors">Cancelar</button>
+      <button (click)="save()" [disabled]="isSaving || !name.trim()" class="bg-primary text-on-primary font-label-md px-6 py-2.5 rounded-full shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-50">
+        {{ isSaving ? 'A guardar...' : 'Guardar' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="max-w-[800px] mx-auto px-gutter py-stack-lg space-y-stack-lg">
+    <p *ngIf="error" class="rounded-2xl bg-red-50 border border-red-100 px-5 py-4 text-sm font-medium text-red-700">
+      {{ error }}
+    </p>
+
+    <section class="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row gap-6 sm:items-center">
+        <div class="relative w-32 h-32 rounded-full overflow-hidden bg-surface-container dark:bg-slate-700 shadow-xl">
+          <img *ngIf="avatarPreview" class="w-full h-full object-cover" [src]="avatarPreview" alt="Avatar" />
+          <div *ngIf="!avatarPreview" class="w-full h-full flex items-center justify-center text-on-surface-variant">
+            <span class="material-symbols-outlined text-5xl">person</span>
+          </div>
+        </div>
+
+        <div>
+          <input #avatarInput type="file" accept="image/*" class="hidden" (change)="onAvatarSelected($event)" />
+          <button (click)="avatarInput.click()" class="inline-flex items-center gap-2 bg-surface-container border border-outline-variant px-4 py-2 rounded-full font-label-md hover:bg-surface-container-high transition-colors">
+            <span class="material-symbols-outlined text-[20px]">photo_camera</span>
+            Alterar foto
+          </button>
+          <p class="mt-2 text-label-sm text-on-surface-variant">JPG, PNG ou WEBP ate 2MB.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+      <div class="space-y-2">
+        <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Nome</label>
+        <input [(ngModel)]="name" class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md" type="text" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Privacidade</label>
+        <select [(ngModel)]="privacy" class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md">
+          <option value="public">Publico</option>
+          <option value="private">Privado</option>
+        </select>
+      </div>
+
+      <div class="space-y-2 md:col-span-2">
+        <label class="block font-label-md text-label-md text-on-surface-variant dark:text-slate-300 px-1">Bio</label>
+        <textarea [(ngModel)]="bio" maxlength="500" class="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none text-body-md resize-none" rows="4"></textarea>
+        <p class="text-right text-label-sm text-outline px-1">{{ bio.length }} / 500 caracteres</p>
+      </div>
+    </section>
+  </div>
+</main>

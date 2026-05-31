@@ -1,0 +1,127 @@
+<main class="pt-8 pb-12 min-h-screen">
+    <div class="max-w-[920px] px-4 md:px-8 mx-auto lg:mx-0 lg:pl-10">
+        <div class="mb-stack-lg">
+            <h1 class="font-display text-h1 text-on-surface dark:text-white mb-2">Configuracoes</h1>
+            <p class="font-body-md text-secondary dark:text-slate-400">
+                Gira as preferencias da conta, privacidade e seguranca.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-stack-md mb-stack-lg">
+            <div class="md:col-span-2 bg-surface-container-lowest dark:bg-slate-800 p-stack-lg rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] flex items-center gap-gutter">
+                <img *ngIf="user?.avatar_url" alt="Perfil" class="w-24 h-24 rounded-full object-cover border-4 border-surface-container shadow-sm" [src]="user?.avatar_url" />
+                <div *ngIf="!user?.avatar_url" class="w-24 h-24 rounded-full border-4 border-surface-container shadow-sm bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-5xl">person</span>
+                </div>
+                <div>
+                    <h3 class="font-display text-h2 text-on-surface dark:text-white">{{ user?.name || 'Utilizador' }}</h3>
+                    <p class="text-secondary dark:text-slate-400 font-body-md">{{ user?.email || 'Conta NzolaNet' }}</p>
+                    <button routerLink="/app/editar-perfil" class="mt-stack-sm font-label-md text-primary hover:underline underline-offset-4 transition-all">
+                        Editar perfil
+                    </button>
+                </div>
+            </div>
+            <div class="bg-primary text-on-primary p-stack-lg rounded-xl shadow-lg flex flex-col justify-center items-center text-center">
+                <span class="material-symbols-outlined text-4xl mb-2">verified_user</span>
+                <span class="font-display text-label-md font-bold">Conta ativa</span>
+                <p class="text-on-primary/80 text-label-sm mt-1">Perfil {{ user?.privacy === 'private' ? 'privado' : 'publico' }}</p>
+            </div>
+        </div>
+
+        <div class="space-y-stack-md">
+            <section>
+                <h3 class="font-display text-label-sm uppercase tracking-widest text-outline dark:text-slate-400 mb-stack-sm px-2">
+                    Conta e identidade
+                </h3>
+                <div class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] overflow-hidden">
+                    <div routerLink="/app/editar-perfil" class="p-4 flex items-center justify-between hover:bg-surface-container-low dark:hover:bg-slate-700 transition-all cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary-container dark:bg-slate-700/50 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">person_outline</span>
+                            </div>
+                            <div>
+                                <p class="font-display text-body-md font-semibold text-on-surface dark:text-white">Detalhes da conta</p>
+                                <p class="text-label-sm text-secondary dark:text-slate-400">Nome, email, bio e foto de perfil</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-outline dark:text-slate-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                    </div>
+                    <div class="h-[1px] bg-outline-variant/30 dark:bg-slate-600/30 mx-4"></div>
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary-container dark:bg-slate-700/50 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">language</span>
+                            </div>
+                            <div>
+                                <p class="font-display text-body-md font-semibold text-on-surface dark:text-white">Idioma e regiao</p>
+                                <p class="text-label-sm text-secondary dark:text-slate-400">Portugues</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="font-display text-label-sm uppercase tracking-widest text-outline dark:text-slate-400 mb-stack-sm px-2">
+                    Aparencia
+                </h3>
+                <div class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] overflow-hidden">
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary-container dark:bg-slate-700/50 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">dark_mode</span>
+                            </div>
+                            <div>
+                                <p class="font-display text-body-md font-semibold text-on-surface dark:text-white">Modo escuro</p>
+                                <p class="text-label-sm text-secondary dark:text-slate-400">Ajustar aparencia visual</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input class="sr-only peer" type="checkbox" [checked]="isDarkMode" (change)="toggleDarkMode()" />
+                            <div class="w-11 h-6 bg-surface-container-highest dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="font-display text-label-sm uppercase tracking-widest text-outline dark:text-slate-400 mb-stack-sm px-2">
+                    Privacidade e seguranca
+                </h3>
+                <div class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] overflow-hidden">
+                    <div class="p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary-container dark:bg-slate-700/50 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">shield</span>
+                            </div>
+                            <div>
+                                <p class="font-display text-body-md font-semibold text-on-surface dark:text-white">Seguranca da conta</p>
+                                <p class="text-label-sm text-secondary dark:text-slate-400">Senha, sessoes e recuperacao</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-[1px] bg-outline-variant/30 dark:bg-slate-600/30 mx-4"></div>
+                    <div routerLink="/app/editar-perfil" class="p-4 flex items-center justify-between hover:bg-surface-container-low dark:hover:bg-slate-700 transition-all cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-secondary-container dark:bg-slate-700/50 flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">lock</span>
+                            </div>
+                            <div>
+                                <p class="font-display text-body-md font-semibold text-on-surface dark:text-white">Privacidade do perfil</p>
+                                <p class="text-label-sm text-secondary dark:text-slate-400">Perfil publico ou privado</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-outline dark:text-slate-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="pt-stack-lg">
+                <button (click)="logout()" class="w-full py-4 text-red-500 font-display font-bold hover:bg-red-500 hover:text-white rounded-xl transition-all duration-300 border border-red-200 hover:border-red-500 hover:shadow-[0_8px_20px_-4px_rgba(239,68,68,0.4)]">
+                    Terminar sessao
+                </button>
+                <p class="text-center text-label-sm text-outline dark:text-slate-400 mt-stack-md">NzolaNet versao 2.4.0</p>
+            </div>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,64 @@
+<div class="space-y-8">
+
+  <!-- Search Input -->
+  <div>
+    <div class="relative">
+      <svg class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+      </svg>
+      <input
+        [(ngModel)]="query"
+        (ngModelChange)="scheduleSearch()"
+        placeholder="Pesquisar utilizadores..."
+        class="w-full border border-gray-200 dark:border-slate-700 rounded-full py-4 pl-14 pr-6 outline-none focus:border-primary text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800"
+      >
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-2 mt-5">
+      <button class="bg-primary text-white px-5 py-2 rounded-full text-sm font-semibold">Utilizadores</button>
+    </div>
+  </div>
+
+  <!-- Users List -->
+  <div class="space-y-4">
+    <p *ngIf="message" class="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ message }}</p>
+    <p *ngIf="error" class="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</p>
+
+    <div *ngIf="isLoading" class="bg-white dark:bg-slate-800 rounded-2xl p-6 text-sm text-gray-600 dark:text-slate-300">
+      A pesquisar...
+    </div>
+
+    <div *ngIf="!isLoading && query && users.length === 0" class="bg-white dark:bg-slate-800 rounded-2xl p-6 text-sm text-gray-600 dark:text-slate-300">
+      Nenhum utilizador encontrado.
+    </div>
+
+    @for(user of users; track user.id){
+      <div
+        [routerLink]="['/app/perfil', user.id]"
+        class="bg-white dark:bg-slate-800 rounded-2xl p-6 flex items-center justify-between shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div class="flex items-center gap-5">
+          <ng-container *ngIf="user.avatar_url; else searchAvatarFallback">
+            <img [src]="user.avatar_url" [alt]="user.name" class="w-16 h-16 rounded-full object-cover">
+          </ng-container>
+          <ng-template #searchAvatarFallback>
+            <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-4xl">person</span>
+            </div>
+          </ng-template>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-xl text-gray-900 dark:text-white">{{user.name}}</h3>
+            </div>
+            <p class="text-gray-600 dark:text-slate-500 text-sm mt-0.5 font-medium">{{ user.bio || 'Perfil ' + (user.privacy === 'private' ? 'privado' : 'publico') }}</p>
+          </div>
+        </div>
+
+        <button (click)="follow(user); $event.stopPropagation()" class="bg-primary text-white font-bold px-8 py-2.5 rounded-full hover:bg-blue-700 transition-colors">
+          Seguir
+        </button>
+      </div>
+    }
+  </div>
+
+</div>

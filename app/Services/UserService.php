@@ -32,6 +32,18 @@ class UserService implements IUserService
         return UserResponseDTO::fromModel($user);
     }
 
+    public function search(string $term): array
+    {
+        if (trim($term) === '') {
+            return [];
+        }
+
+        return $this->userRepository
+            ->search($term)
+            ->map(fn($user) => UserResponseDTO::fromModel($user)->toArray())
+            ->toArray();
+    }
+
     public function update(string $id, UpdateUserDTO $dto): UserResponseDTO
     {
         // Garante erro controlado se o perfil nao existir.
@@ -77,6 +89,7 @@ class UserService implements IUserService
         $this->notificationRepository->create(
             $followingId,
             'follow',
+            $followerId,
             $followerId
         );
     }

@@ -18,6 +18,8 @@ class Notification extends Model
         'user_id',
         'type',
         'related_id',
+        'actor_id',
+        'post_id',
         'read',
     ];
 
@@ -31,5 +33,17 @@ class Notification extends Model
     {
         // Utilizador que recebeu a notificacao.
         return $this->belongsTo(User::class);
+    }
+
+    public function actor(): BelongsTo
+    {
+        // Utilizador que causou a notificacao.
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    public function post(): BelongsTo
+    {
+        // Publicacao relacionada quando o evento acontece num post.
+        return $this->belongsTo(Post::class);
     }
 }

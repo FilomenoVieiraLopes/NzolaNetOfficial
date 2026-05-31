@@ -16,11 +16,11 @@ class CommentController extends Controller
     ) {}
 
     // GET /api/posts/{postId}/comments
-    public function index(string $postId): JsonResponse
+    public function index(Request $request, string $postId): JsonResponse
     {
         try {
             // Retorna comentarios de uma publicacao existente.
-            $comments = $this->commentService->getByPost($postId);
+            $comments = $this->commentService->getByPost($postId, (int) $request->user()->id, $request->user()->isAdmin());
 
             return response()->json($comments);
 
@@ -44,7 +44,7 @@ class CommentController extends Controller
 
         try {
             $dto = CreateCommentDTO::fromArray($validated);
-            $comment = $this->commentService->create($dto);
+            $comment = $this->commentService->create($dto, (int) $request->user()->id, $request->user()->isAdmin());
 
             return response()->json([
                 'message' => 'Comentario adicionado com sucesso.',
@@ -68,7 +68,7 @@ class CommentController extends Controller
 
         try {
             $dto = UpdateCommentDTO::fromArray($validated);
-            $comment = $this->commentService->update($id, (string) $request->user()->id, $dto);
+            $comment = $this->commentService->update($id, (string) $request->user()->id, $dto, $request->user()->isAdmin());
 
             return response()->json([
                 'message' => 'Comentario actualizado com sucesso.',

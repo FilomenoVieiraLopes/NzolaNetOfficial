@@ -133,4 +133,105 @@ class NzolaNetApiTest extends TestCase
             'id' => $comment->id,
         ]);
     }
+
+    public function test_user_search_finds_matching_profiles(): void
+    {
+        User::factory()->create(['name' => 'Maria Nzola', 'email' => 'maria@example.com']);
+        User::factory()->create(['name' => 'Outro Nome']);
+
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson('/api/users/search?q=Maria')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Maria Nzola']);
+    }
+
+    public function test_post_response_includes_baze_state_and_permissions(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $post = Post::create([
+            'user_id' => $owner->id,
+            'content' => 'Post com estado de baze',
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $this->postJson("/api/posts/{$post->id}/bazes")
+            ->assertCreated();
+
+        $this->getJson("/api/posts/{$post->id}")
+            ->assertOk()
+            ->assertJsonPath('has_bazed', true)
+            ->assertJsonPath('can_edit', false)
+            ->assertJsonPath('can_delete', false);
+    }
+
+    public function test_following_feed_contains_followed_users_posts(): void
+    {
+        $author = User::factory()->create();
+        $viewer = User::factory()->create();
+
+        $post = Post::create([
+            'user_id' => $author->id,
+            'content' => 'Post de alguem seguido',
+        ]);
+
+        Sanctum::actingAs($viewer);
+
+        $this->postJson("/api/users/{$author->id}/follow")
+            ->assertOk();
+
+        $this->getJson('/api/posts/feed')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $post->id]);
+    }
+
+    public function test_notifications_include_actor_and_post_context(): void
+    {
+        $owner = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Actor Context']);
+        $post = Post::create([
+            'user_id' => $owner->id,
+            'content' => 'Post que recebe comentario para notificacao',
+        ]);
+
+        Sanctum::actingAs($actor);
+
+        $this->postJson("/api/posts/{$post->id}/comments", [
+            'body' => 'Comentario com contexto',
+        ])->assertCreated();
+
+        Sanctum::actingAs($owner);
+
+        $this->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonFragment([
+                'actor_name' => 'Actor Context',
+                'post_id' => $post->id,
+            ]);
+    }
+
+    public function test_user_posts_endpoint_returns_only_that_users_posts(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        $ownerPost = Post::create([
+            'user_id' => $owner->id,
+            'content' => 'Post do perfil certo',
+        ]);
+
+        Post::create([
+            'user_id' => $other->id,
+            'content' => 'Post de outro perfil',
+        ]);
+
+        Sanctum::actingAs($owner);
+
+        $this->getJson("/api/users/{$owner->id}/posts")
+            ->assertOk()
+            ->assertJsonFragment(['id' => $ownerPost->id])
+            ->assertJsonMissing(['content' => 'Post de outro perfil']);
+    }
 }

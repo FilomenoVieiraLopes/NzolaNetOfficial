@@ -676,3 +676,30 @@ Resposta `200`:
 ## Observacoes para uploads
 
 Para `avatar`, `image` e `video`, use `FormData` no Angular. Nao envie `Content-Type: application/json` nesses requests. O browser define automaticamente o `Content-Type` com o boundary correto.
+# Atualizacao de Integracao
+
+Campos importantes adicionados nas respostas:
+
+- Posts: `has_bazed`, `can_edit`, `can_delete`.
+- Comentarios: `can_edit`, `can_delete`.
+- Notificacoes: `actor_id`, `actor_name`, `actor_avatar`, `post_id`, `post_excerpt`.
+
+Novos endpoints:
+
+```http
+GET /api/users/search?q=termo
+GET /api/users/{id}/posts
+```
+
+Recuperacao de senha:
+
+```http
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+```
+
+O link de reset gerado pelo backend aponta para o frontend:
+
+```txt
+http://127.0.0.1:4200/redefinir-senha?token=...&email=...
+```
