@@ -93,9 +93,9 @@
 
         <div class="flex items-center justify-between pt-2 border-t border-outline-variant/10">
           <div class="flex gap-6">
-            <button (click)="giveBaze(post)" class="flex items-center gap-1.5 hover:text-primary transition-colors" [class.text-primary]="post.has_bazed">
-              <span class="material-symbols-outlined text-[20px]">favorite</span>
-              <span class="text-label-sm">{{ post.bazes_count }}</span>
+            <button (click)="giveBaze(post)" class="flex items-center gap-1.5 transition-colors" [class.text-red-600]="post.has_bazed" [class.hover:text-red-600]="!post.has_bazed" [class.text-on-surface-variant]="!post.has_bazed" title="Baze">
+              <span class="material-symbols-outlined text-[20px]" [style.font-variation-settings]="post.has_bazed ? '\'FILL\' 1' : '\'FILL\' 0'">favorite</span>
+              <span class="text-label-sm" [class.text-red-600]="post.has_bazed">{{ post.bazes_count }}</span>
             </button>
             <button (click)="toggleComments(post)" class="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors" [class.text-primary]="isCommentsOpen(post)">
               <span class="material-symbols-outlined text-[20px]">mode_comment</span>

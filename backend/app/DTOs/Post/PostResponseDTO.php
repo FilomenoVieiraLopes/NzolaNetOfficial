@@ -17,6 +17,7 @@ class PostResponseDTO
         public readonly ?string $video_url,
         public readonly int $bazes_count,
         public readonly int $comments_count,
+        public readonly bool $has_bazed,
         public readonly bool $can_edit,
         public readonly bool $can_delete,
         public readonly string $created_at,
@@ -26,6 +27,9 @@ class PostResponseDTO
     {
         // Usa contadores carregados com withCount quando existirem.
         $isAuthor = $currentUserId !== null && (int) $post->user_id === $currentUserId;
+        $hasBazed = $currentUserId !== null && $post->bazes()
+            ->where('user_id', $currentUserId)
+            ->exists();
 
         return new self(
             id: $post->id,
@@ -37,6 +41,7 @@ class PostResponseDTO
             video_url: $post->video_url,
             bazes_count: $post->bazes_count ?? $post->bazes()->count(),
             comments_count: $post->comments_count ?? $post->comments()->count(),
+            has_bazed: $hasBazed,
             can_edit: $isAuthor || $isAdmin,
             can_delete: $isAuthor || $isAdmin,
             created_at: $post->created_at->toDateTimeString(),
@@ -55,6 +60,7 @@ class PostResponseDTO
             'video_url'      => $this->video_url,
             'bazes_count'    => $this->bazes_count,
             'comments_count' => $this->comments_count,
+            'has_bazed'      => $this->has_bazed,
             'can_edit'       => $this->can_edit,
             'can_delete'     => $this->can_delete,
             'created_at'     => $this->created_at,
