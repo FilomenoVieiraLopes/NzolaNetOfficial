@@ -8,13 +8,15 @@ use Illuminate\Database\Eloquent\Collection;
 
 class NotificationRepository implements INotificationRepository
 {
-    public function create(string $userId, string $type, string $relatedId): Notification
+    public function create(string $userId, string $type, string $relatedId, ?string $actorId = null, ?string $postId = null): Notification
     {
         // related_id aponta para o recurso que causou a notificacao.
         return Notification::create([
             'user_id'    => $userId,
+            'actor_id'   => $actorId,
             'type'       => $type,
             'related_id' => $relatedId,
+            'post_id'    => $postId,
         ]);
     }
 
@@ -22,6 +24,7 @@ class NotificationRepository implements INotificationRepository
     {
         // Notificacoes recentes primeiro.
         return Notification::where('user_id', $userId)
+            ->with(['actor', 'post'])
             ->orderBy('created_at', 'desc')
             ->get();
     }

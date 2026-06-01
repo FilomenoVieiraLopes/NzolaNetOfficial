@@ -42,10 +42,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   commentDrafts: Record<number, string> = {};
   editingCommentId: number | null = null;
   editCommentText = '';
+  targetPostId: number | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private notificationTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
+    this.targetPostId = history.state?.postId ? Number(history.state.postId) : null;
     this.loadFeed('general');
     this.loadNotifications();
     this.notificationTimer = setInterval(() => this.loadNotifications(false), 30000);
@@ -69,6 +71,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.posts = response.data;
         this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
         this.isLoading = false;
+        this.focusTargetPost();
       },
       error: (error) => {
         console.error('Error fetching posts', error);
@@ -251,7 +254,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   openNotification(notification: Notification): void {
     const finish = () => {
       this.showNotifications = false;
-      if (notification.actor_id) {
+      if (notification.post_id) {
+        this.targetPostId = notification.post_id;
+        this.focusTargetPost();
+        this.router.navigate(['/app/home'], { state: { postId: notification.post_id } });
+      } else if (notification.actor_id) {
         this.router.navigate(['/app/perfil', notification.actor_id]);
       } else {
         this.router.navigate(['/app/notificacoes']);
@@ -318,6 +325,22 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.loadingComments[post.id] = false;
       }
     });
+  }
+
+  private focusTargetPost(): void {
+    if (!this.targetPostId) return;
+
+    const post = this.posts.find((item) => item.id === this.targetPostId);
+    if (post) {
+      this.openCommentPostIds.add(post.id);
+    }
+
+    setTimeout(() => {
+      document.getElementById(`post-${this.targetPostId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 100);
   }
 
   private loadNotifications(showErrors = true): void {

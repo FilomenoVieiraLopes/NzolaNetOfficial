@@ -48,7 +48,7 @@
       <div *ngIf="isLoading" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl p-stack-md text-sm">A carregar publicacoes...</div>
       <div *ngIf="!isLoading && posts.length === 0" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl p-stack-md text-sm text-on-surface-variant">Nenhuma publicacao encontrada.</div>
 
-      <article *ngFor="let post of posts" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] p-stack-md">
+      <article *ngFor="let post of posts" [id]="'post-' + post.id" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] p-stack-md transition-shadow" [class.ring-2]="targetPostId === post.id" [class.ring-primary]="targetPostId === post.id">
         <div class="flex gap-3 mb-3">
           <ng-container *ngIf="post.author_avatar; else postAvatarFallback">
             <img class="w-11 h-11 rounded-full object-cover" [src]="post.author_avatar" [alt]="post.author_name">

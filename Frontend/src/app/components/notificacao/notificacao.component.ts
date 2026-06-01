@@ -47,6 +47,11 @@ export class NotificacaoComponent implements OnInit {
   openNotification(notification: Notification): void {
     this.markAsRead(notification);
 
+    if (notification.post_id) {
+      this.router.navigate(['/app/home'], { state: { postId: notification.post_id } });
+      return;
+    }
+
     if (notification.actor_id) {
       this.router.navigate(['/app/perfil', notification.actor_id]);
       return;

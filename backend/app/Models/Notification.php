@@ -16,8 +16,10 @@ class Notification extends Model
     // type define o evento; related_id aponta para o recurso relacionado.
     protected $fillable = [
         'user_id',
+        'actor_id',
         'type',
         'related_id',
+        'post_id',
         'read',
     ];
 
@@ -31,5 +33,17 @@ class Notification extends Model
     {
         // Utilizador que recebeu a notificacao.
         return $this->belongsTo(User::class);
+    }
+
+    public function actor(): BelongsTo
+    {
+        // Utilizador que causou a notificacao.
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    public function post(): BelongsTo
+    {
+        // Publicacao relacionada, quando a notificacao veio de post/comentario/baze.
+        return $this->belongsTo(Post::class);
     }
 }

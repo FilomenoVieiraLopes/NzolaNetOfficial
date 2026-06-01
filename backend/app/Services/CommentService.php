@@ -49,7 +49,9 @@ class CommentService implements ICommentService
             $this->notificationRepository->create(
                 $post->user_id,
                 'comment',
-                $comment->id
+                $comment->id,
+                (string) $dto->user_id,
+                (string) $dto->post_id
             );
         }
 

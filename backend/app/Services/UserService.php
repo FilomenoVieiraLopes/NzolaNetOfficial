@@ -89,6 +89,7 @@ class UserService implements IUserService
         $this->notificationRepository->create(
             $followingId,
             'follow',
+            $followerId,
             $followerId
         );
     }
