@@ -45,17 +45,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   targetPostId: number | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private notificationTimer: ReturnType<typeof setInterval> | null = null;
+  private feedTimer: ReturnType<typeof setInterval> | null = null;
+  private commentsTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     this.targetPostId = history.state?.postId ? Number(history.state.postId) : null;
     this.loadFeed('general');
     this.loadNotifications();
-    this.notificationTimer = setInterval(() => this.loadNotifications(false), 30000);
+    this.notificationTimer = setInterval(() => this.loadNotifications(false), 10000);
+    this.feedTimer = setInterval(() => this.refreshFeed(), 12000);
+    this.commentsTimer = setInterval(() => this.refreshOpenComments(), 8000);
   }
 
   ngOnDestroy(): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     if (this.notificationTimer) clearInterval(this.notificationTimer);
+    if (this.feedTimer) clearInterval(this.feedTimer);
+    if (this.commentsTimer) clearInterval(this.commentsTimer);
   }
 
   loadFeed(mode: 'general' | 'following'): void {
@@ -68,7 +74,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     request.subscribe({
       next: (response) => {
-        this.posts = response.data;
+        this.posts = this.mergePosts(response.data);
         this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
         this.isLoading = false;
         this.focusTargetPost();
@@ -89,6 +95,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: () => {
         post.has_bazed = !post.has_bazed;
         post.bazes_count += post.has_bazed ? 1 : -1;
+        this.loadNotifications(false);
       },
       error: (error) => console.error('Error giving baze', error)
     });
@@ -159,6 +166,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         post.comments = [...(post.comments || []), response.data];
         post.comments_count += 1;
         this.commentDrafts[post.id] = '';
+        this.loadNotifications(false);
       },
       error: (error) => console.error('Error adding comment', error)
     });
@@ -324,6 +332,45 @@ export class HomeComponent implements OnInit, OnDestroy {
         console.error('Error loading comments', error);
         this.loadingComments[post.id] = false;
       }
+    });
+  }
+
+  private refreshFeed(): void {
+    if (this.isLoading || this.editingPostId) return;
+
+    const request = this.feedMode === 'general'
+      ? this.feedService.getPosts()
+      : this.feedService.getFollowingFeed();
+
+    request.subscribe({
+      next: (response) => {
+        this.posts = this.mergePosts(response.data);
+        this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
+      },
+      error: (error) => console.error('Error refreshing feed', error)
+    });
+  }
+
+  private refreshOpenComments(): void {
+    this.posts
+      .filter((post) => this.openCommentPostIds.has(post.id) && !this.loadingComments[post.id])
+      .forEach((post) => {
+        this.feedService.getComments(post.id).subscribe({
+          next: (response) => post.comments = response.data,
+          error: (error) => console.error('Error refreshing comments', error)
+        });
+      });
+  }
+
+  private mergePosts(freshPosts: Post[]): Post[] {
+    return freshPosts.map((freshPost) => {
+      const currentPost = this.posts.find((post) => post.id === freshPost.id);
+      if (!currentPost) return freshPost;
+
+      return {
+        ...freshPost,
+        comments: currentPost.comments,
+      };
     });
   }
 
