@@ -19,7 +19,7 @@ class CommentService implements ICommentService
         private readonly INotificationRepository $notificationRepository,
     ) {}
 
-    public function getByPost(string $postId): array
+    public function getByPost(string $postId, ?int $currentUserId = null, bool $isAdmin = false): array
     {
         // Nao retorna lista vazia para post inexistente; devolve 404 controlado.
         if (!$this->postRepository->findById($postId)) {
@@ -28,8 +28,8 @@ class CommentService implements ICommentService
 
         $comments = $this->commentRepository->getByPost($postId);
 
-        return $comments->map(function ($comment) {
-            return CommentResponseDTO::fromModel($comment)->toArray();
+        return $comments->map(function ($comment) use ($currentUserId, $isAdmin) {
+            return CommentResponseDTO::fromModel($comment, $currentUserId, $isAdmin)->toArray();
         })->toArray();
     }
 

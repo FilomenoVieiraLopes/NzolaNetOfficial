@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -14,7 +14,8 @@ import { AuthService } from '../../services/auth.service';
 export class RegistrarComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
-  avatar_url= '';
+
+  avatar_url = '';
   fullName = '';
   bio = '';
   email = '';
@@ -24,21 +25,22 @@ export class RegistrarComponent {
   isLoading = false;
 
   onSubmit(): void {
-    if (!this.fullName || !this.bio || !this.email || !this.password) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    if (!this.fullName.trim() || !this.email.trim() || !this.password) {
+      alert('Por favor, preencha nome, email e palavra-passe.');
       return;
     }
+
     if (!this.termsAccepted) {
-      alert('Você precisa aceitar os termos de serviço para continuar.');
+      alert('Precisa aceitar os termos de servico para continuar.');
       return;
     }
 
     this.isLoading = true;
     this.authService.register({
-      avatar_url:this.avatar_url,
-      fullName: this.fullName,
-      bio: this.bio,
-      email: this.email,
+      avatar_url: this.avatar_url,
+      fullName: this.fullName.trim(),
+      bio: this.bio.trim() || null,
+      email: this.email.trim(),
       password: this.password,
       profileImage: this.profileImage
     }).subscribe({
@@ -50,7 +52,7 @@ export class RegistrarComponent {
       },
       error: (err) => {
         this.isLoading = false;
-        alert('Erro ao registar utilizador. Tente novamente.');
+        alert(err?.error?.message || 'Erro ao registar utilizador. Tente novamente.');
         console.error(err);
       }
     });
@@ -61,19 +63,16 @@ export class RegistrarComponent {
     if (input.files && input.files[0]) {
       const file = input.files[0];
 
-      // Validar tamanho (máx 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        alert('Imagem muito grande! Máximo 2MB.');
+        alert('Imagem muito grande. Maximo 2MB.');
         return;
       }
 
-      // Validar tipo
       if (!file.type.startsWith('image/')) {
-        alert('Por favor, selecione um arquivo de imagem.');
+        alert('Por favor, selecione um ficheiro de imagem.');
         return;
       }
 
-      // Ler arquivo e criar preview
       const reader = new FileReader();
       reader.onload = (e: ProgressEvent<FileReader>) => {
         this.profileImage = e.target?.result as string;

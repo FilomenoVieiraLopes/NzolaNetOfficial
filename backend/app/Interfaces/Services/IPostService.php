@@ -11,8 +11,9 @@ interface IPostService
 {
     public function getById(string $id): PostResponseDTO;
     public function create(CreatePostDTO $dto): PostResponseDTO;
-    public function update(string $id, string $userId, UpdatePostDTO $dto): PostResponseDTO;
-    public function delete(string $id, string $userId): void;
+    public function update(string $id, string $userId, UpdatePostDTO $dto, bool $isAdmin = false): PostResponseDTO;
+    public function delete(string $id, string $userId, bool $isAdmin = false): void;
     public function getFeed(string $userId): LengthAwarePaginator;
     public function getAll(): LengthAwarePaginator;
+    public function getByUser(string $userId): LengthAwarePaginator;
 }

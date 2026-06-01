@@ -1,73 +1,140 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-
-import { PostsGridComponent } from '../../features/profile/components/posts-grid/posts-grid.component';
-import { HeroSectionComponent } from '../../features/profile/components/hero-section/hero-section.component';
-import { AboutComponent } from '../../features/profile/components/bio-section/about.component';
-import { TabsComponent } from '../../features/profile/components/tabs/tabs.component';
-import { StatsCardComponent } from '../../features/profile/components/stats-card/stats-card.component';
-import { UserService, UserProfile } from '../../services/user.service';
+import { CommonModule, DatePipe } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink, RouterModule } from '@angular/router';
+import { Post } from '../../models/post.model';
+import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
+import { FeedService } from '../../services/feed.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-perfil',
-  standalone:true,
-
-  imports:[
-    CommonModule,
-    HeroSectionComponent,
-    AboutComponent,
-    StatsCardComponent,
-    TabsComponent,
-    PostsGridComponent
-  ],
-
-  templateUrl:'./perfil.component.html'
+  standalone: true,
+  imports: [CommonModule, DatePipe, RouterLink, RouterModule, FormsModule],
+  templateUrl: './perfil.component.html'
 })
 export class PerfilComponent implements OnInit {
-  private userService = inject(UserService);
   private authService = inject(AuthService);
+  private userService = inject(UserService);
+  private feedService = inject(FeedService);
+  private route = inject(ActivatedRoute);
 
-  profile: UserProfile | null = null;
+  currentUser = this.authService.getCurrentUser();
+  user: User | null = null;
+  posts: Post[] = [];
   followersCount = 0;
   followingCount = 0;
-  errorMessage = '';
-  loading = true;
+  isLoading = true;
+  error = '';
+  isOwnProfile = false;
+  editingPostId: number | null = null;
+  editPostContent = '';
 
   ngOnInit(): void {
-    this.loadProfile();
+    this.route.paramMap.subscribe((params) => {
+      this.currentUser = this.authService.getCurrentUser();
+      if (!this.currentUser) {
+        this.isLoading = false;
+        return;
+      }
+
+      const routeUserId = Number(params.get('id') || this.currentUser.id);
+      this.loadProfile(routeUserId);
+    });
   }
 
-  private loadProfile(): void {
-    const userId = this.authService.getCurrentUserId();
-    if (!userId) {
-      this.errorMessage = 'Usuário não autenticado.';
-      this.loading = false;
-      return;
-    }
+  private loadProfile(userId: number): void {
+    this.isLoading = true;
+    this.error = '';
+    this.user = null;
+    this.posts = [];
+    this.followersCount = 0;
+    this.followingCount = 0;
+    this.isOwnProfile = Number(this.currentUser?.id) === Number(userId);
 
-    this.userService.getProfile(userId).subscribe({
-      next: (profile) => {
-        this.profile = profile;
-        this.followersCount = profile.followers_count ?? 0;
-        this.followingCount = profile.following_count ?? 0;
-        this.loading = false;
+    this.userService.getUser(userId).subscribe({
+      next: (user) => {
+        this.user = user;
+        this.isOwnProfile = Number(this.currentUser?.id) === Number(user.id);
+        if (this.isOwnProfile) this.authService.setCurrentUser(user);
+        this.loadProfileStats(user.id);
+        this.loadPosts(user.id);
       },
-      error: (err) => {
-        console.error('Erro ao carregar perfil:', err);
-        this.errorMessage = 'Não foi possível carregar o perfil.';
-        this.loading = false;
+      error: (error) => {
+        console.error('Error loading profile', error);
+        this.error = error?.error?.message || 'Nao foi possivel carregar este perfil.';
+        this.isLoading = false;
       }
     });
+  }
 
+  private loadProfileStats(userId: number): void {
     this.userService.getFollowers(userId).subscribe({
       next: (followers) => this.followersCount = followers.length,
-      error: (err) => console.error('Erro ao carregar seguidores:', err)
+      error: (error) => console.error('Error loading followers', error)
     });
 
     this.userService.getFollowing(userId).subscribe({
       next: (following) => this.followingCount = following.length,
-      error: (err) => console.error('Erro ao carregar seguindo:', err)
+      error: (error) => console.error('Error loading following', error)
     });
+  }
+
+  private loadPosts(userId: number): void {
+    this.feedService.getUserPosts(userId).subscribe({
+      next: (response) => {
+        this.posts = response.data;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading profile posts', error);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  canEditPost(post: Post): boolean {
+    return !!post.can_edit || Number(post.user_id) === Number(this.currentUser?.id);
+  }
+
+  canDeletePost(post: Post): boolean {
+    return !!post.can_delete || Number(post.user_id) === Number(this.currentUser?.id) || this.isAdmin();
+  }
+
+  startEditPost(post: Post): void {
+    this.editingPostId = post.id;
+    this.editPostContent = post.content;
+  }
+
+  cancelEditPost(): void {
+    this.editingPostId = null;
+    this.editPostContent = '';
+  }
+
+  savePost(post: Post): void {
+    const content = this.editPostContent.trim();
+    if (!content) return;
+
+    this.feedService.updatePost(post.id, { content }).subscribe({
+      next: (response) => {
+        this.posts = this.posts.map((item) => item.id === post.id ? response.data : item);
+        this.cancelEditPost();
+      },
+      error: (error) => console.error('Error updating post', error)
+    });
+  }
+
+  deletePost(post: Post): void {
+    if (!confirm('Deseja eliminar esta publicacao?')) return;
+
+    this.feedService.deletePost(post.id).subscribe({
+      next: () => this.posts = this.posts.filter((item) => item.id !== post.id),
+      error: (error) => console.error('Error deleting post', error)
+    });
+  }
+
+  private isAdmin(): boolean {
+    return String(this.currentUser?.role || '').toLowerCase() === 'admin';
   }
 }

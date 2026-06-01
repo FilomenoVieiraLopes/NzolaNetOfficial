@@ -14,11 +14,15 @@ class CommentResponseDTO
         public readonly string $author_name,
         public readonly ?string $author_avatar,
         public readonly string $body,
+        public readonly bool $can_edit,
+        public readonly bool $can_delete,
         public readonly string $created_at,
     ) {}
 
-    public static function fromModel(Comment $comment): self
+    public static function fromModel(Comment $comment, ?int $currentUserId = null, bool $isAdmin = false): self
     {
+        $isAuthor = $currentUserId !== null && (int) $comment->user_id === $currentUserId;
+
         return new self(
             id: $comment->id,
             post_id: $comment->post_id,
@@ -26,6 +30,8 @@ class CommentResponseDTO
             author_name: $comment->user->name,
             author_avatar: $comment->user->avatar_url,
             body: $comment->body,
+            can_edit: $isAuthor,
+            can_delete: $isAuthor || $isAdmin,
             created_at: $comment->created_at->toDateTimeString(),
         );
     }
@@ -39,6 +45,8 @@ class CommentResponseDTO
             'author_name'   => $this->author_name,
             'author_avatar' => $this->author_avatar,
             'body'          => $this->body,
+            'can_edit'      => $this->can_edit,
+            'can_delete'    => $this->can_delete,
             'created_at'    => $this->created_at,
         ];
     }

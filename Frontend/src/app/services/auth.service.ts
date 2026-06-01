@@ -2,12 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
+import { User } from '../models/user.model';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 interface AuthResponse {
   message: string;
-  user: any;
+  user: User;
   token: string;
 }
 
@@ -27,14 +28,14 @@ export class AuthService {
     localStorage.setItem(this.userKey, JSON.stringify(res.user));
   }
 
-  login(email: string, password: string): Observable<{ success: boolean; token: string; user: any }> {
+  login(email: string, password: string): Observable<{ success: boolean; token: string; user: User }> {
     return this.http.post<AuthResponse>(`${API_BASE_URL}/auth/login`, { email, password }).pipe(
       tap((res) => this.saveSession(res)),
       map((res) => ({ success: true, token: res.token, user: res.user }))
     );
   }
 
-  register(data: any): Observable<{ success: boolean; token: string; user: any }> {
+  register(data: any): Observable<{ success: boolean; token: string; user: User }> {
     const payload = {
       name: data.fullName ?? data.name,
       email: data.email,
@@ -46,6 +47,14 @@ export class AuthService {
       tap((res) => this.saveSession(res)),
       map((res) => ({ success: true, token: res.token, user: res.user }))
     );
+  }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${API_BASE_URL}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(data: { token: string; email: string; password: string; password_confirmation: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${API_BASE_URL}/auth/reset-password`, data);
   }
 
   logout() {
@@ -62,9 +71,13 @@ export class AuthService {
     return localStorage.getItem(this.tokenKey);
   }
 
-  getCurrentUser(): any | null {
+  getCurrentUser(): User | null {
     const stored = localStorage.getItem(this.userKey);
     return stored ? JSON.parse(stored) : null;
+  }
+
+  setCurrentUser(user: User): void {
+    localStorage.setItem(this.userKey, JSON.stringify(user));
   }
 
   getCurrentUserId(): string | null {

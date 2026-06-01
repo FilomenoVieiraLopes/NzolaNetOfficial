@@ -1,33 +1,34 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-definicao',
-  imports: [ ],
+  imports: [CommonModule, RouterLink],
   templateUrl: './definicao.component.html',
   styleUrl: './definicao.component.css'
 })
 export class DefinicaoComponent implements OnInit {
   private authService = inject(AuthService);
+
+  currentUser: User | null = null;
   isDarkMode = false;
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.currentUser = this.authService.getCurrentUser();
     this.isDarkMode = document.documentElement.classList.contains('dark');
   }
 
-  toggleDarkMode() {
+  toggleDarkMode(): void {
     this.isDarkMode = !this.isDarkMode;
-    if (this.isDarkMode) {
-      document.documentElement.classList.add('dark');
-      // Adicionar classe dark ao body também para garantir fundos se necessário
-      document.body.classList.add('dark', 'bg-gray-900');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark', 'bg-gray-900');
-    }
+    document.documentElement.classList.toggle('dark', this.isDarkMode);
+    document.body.classList.toggle('dark', this.isDarkMode);
+    document.body.classList.toggle('bg-gray-900', this.isDarkMode);
   }
 
-  logout() {
+  logout(): void {
     this.authService.logout();
   }
 }

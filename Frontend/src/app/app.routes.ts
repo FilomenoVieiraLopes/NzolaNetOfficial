@@ -11,6 +11,8 @@ import { EditarPerfilComponent } from './components/editar-perfil/editar-perfil.
 import { DefinicaoComponent } from './components/definicao/definicao.component';
 import { CriarPostComponent } from './components/criarPost/criarPost.component';
 import { ComentarioComponent } from './components/comentario/comentario.component';
+import { RecuperarSenhaComponent } from './components/recuperar-senha/recuperar-senha.component';
+import { ResetarSenhaComponent } from './components/resetar-senha/resetar-senha.component';
 import { authGuard } from './guards/auth.guard';
 import { noAuthGuard } from './guards/no-auth.guard';
 
@@ -32,6 +34,16 @@ export const routes: Routes = [
   {
     path: 'login',
     component: LoginComponent,
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'recuperar-senha',
+    component: RecuperarSenhaComponent,
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'resetar-senha',
+    component: ResetarSenhaComponent,
     canActivate: [noAuthGuard]
   },
 
@@ -56,6 +68,10 @@ export const routes: Routes = [
       },
       {
         path: 'perfil',
+        component: PerfilComponent,
+      },
+      {
+        path: 'perfil/:id',
         component: PerfilComponent,
       },
       {

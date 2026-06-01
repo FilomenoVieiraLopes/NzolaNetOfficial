@@ -1,112 +1,71 @@
- <nav class="fixed top-0 w-full z-50 bg-white dark:bg-slate-800/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] h-20">
-        <div class="flex justify-between items-center h-full px-6 max-w-7xl mx-auto">
-            <div class="flex items-center gap-10">
-                <span class="text-2xl font-bold text-primary">NzolaNet</span>
-             
-            </div>
-            <div class="flex items-center gap-4">
-                <button routerLink="/login"   class="hidden sm:inline-block text-slate-600 dark:text-slate-300 hover:text-primary px-6 py-2 transition-all duration-200 rounded-full">Sign In</button>
-                <button routerLink="/registrar" class="bg-primary text-white rounded-full px-8 py-3 text-sm font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all">Get Started</button>
-            </div>
-        </div>
-    </nav>
+<nav class="fixed top-0 w-full z-50 bg-white dark:bg-slate-800/90 backdrop-blur-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] h-20">
+  <div class="flex justify-between items-center h-full px-6 max-w-7xl mx-auto">
+    <span class="text-2xl font-bold text-primary">NzolaNet</span>
+    <div class="flex items-center gap-4">
+      <button routerLink="/login" class="hidden sm:inline-block text-slate-600 dark:text-slate-300 hover:text-primary px-6 py-2 transition-all duration-200 rounded-full">Entrar</button>
+      <button routerLink="/registrar" class="bg-primary text-white rounded-full px-8 py-3 text-sm font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all">Criar conta</button>
+    </div>
+  </div>
+</nav>
 
-<main class="pt-24">
-    <!-- Hero Section -->
-    <section class="relative overflow-hidden pt-24 pb-24 md:pt-32 md:pb-40">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div class="relative z-10">
-                <h1 class="text-5xl md:text-6xl lg:text-7xl leading-tight font-black tracking-tight mb-6 text-slate-950 dark:text-white">
-                    Conectando mentes, criando o futuro.
-                </h1>
-                <p class="text-lg text-slate-600 dark:text-slate-300 max-w-xl mb-8">
-                    NzolaNet é o ecossistema digital onde a excelência se encontra. Una-se
-                    aos líderes globais em um ambiente privado, seguro e focado em
-                    resultados reais.
-                </p>
-                <div class="flex flex-wrap gap-4">
-                    <button routerLink="/registrar" class="bg-primary text-white rounded-full px-10 py-4 text-base font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all">Começar Agora</button>
+<main class="pt-24 bg-slate-50 dark:bg-slate-900">
+  <section class="pt-20 pb-20 md:pt-28 md:pb-28">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div>
+        <h1 class="text-5xl md:text-6xl lg:text-7xl leading-tight font-black tracking-tight mb-6 text-slate-950 dark:text-white">
+          Conecte-se, publique e interaja na NzolaNet.
+        </h1>
+        <p class="text-lg text-slate-600 dark:text-slate-300 max-w-xl mb-8">
+          Uma rede social para partilhar conteudos, seguir utilizadores, comentar publicacoes e receber notificacoes das interacoes importantes.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <button routerLink="/registrar" class="bg-primary text-white rounded-full px-10 py-4 text-base font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all">Comecar agora</button>
+          <button routerLink="/login" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-full px-10 py-4 text-base font-semibold border border-slate-200 dark:border-slate-700 hover:border-primary transition-all">Entrar</button>
+        </div>
+      </div>
 
-                </div>
-            </div>
-            <div class="relative">
-                <div class="relative z-10 rounded-[32px] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-700 ease-out">
-                    <img alt="Plataforma NzolaNet" class="w-full h-auto object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuB29S0h_W2hcIBCt64tdB71oEwOAKYt89IqhQUQHfjTwIZ-g-L5Uq6s9ibxkgNp6SL12kD6VXK4vFMEVzwXkiF75eVVeZNBJjvD8uceZ_1u9xlH0u26oEfwn8jpq9SwfiEEIkCtjZVb-XQtvoP-6IwjdBYgu-XxyoqYPJzfciTk10lEJgyIAK-qDN2DEbeSbpfVOAQN3Nl7V_uUaEYwoWtRlXLjwqfSzw1LNKfMYKrrn0WcWSwNxnERVZ3jCYU4205JW9EfxBtP_uo" />
-                </div>
-                <div class="absolute -top-12 -right-12 w-64 h-64 bg-blue-100 rounded-full blur-3xl"></div>
-                <div class="absolute -bottom-12 -left-12 w-80 h-80 bg-slate-200/70 rounded-full blur-3xl"></div>
-            </div>
-        </div>
-    </section>
-    <!-- Features Bento Grid -->
-    <section class="py-24 bg-slate-100">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="mb-20 text-center">
-                <h2 class="text-4xl font-bold text-slate-950 dark:text-white mb-4">A excelência em cada detalhe</h2>
-                <p class="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Desenvolvemos ferramentas exclusivas para impulsionar seu crescimento profissional e pessoal.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <div class="md:col-span-8 bg-white dark:bg-slate-800 rounded-[32px] p-10 flex flex-col justify-between shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-200 dark:border-slate-700/30">
-                    <div class="max-w-md">
-                    
-                        <h3 class="text-3xl font-bold mb-4">Global Reach</h3>
-                        <p class="text-slate-600 dark:text-slate-300 text-lg">Sua rede sem fronteiras. Conecte-se com especialistas e influenciadores de todos os continentes através de algoritmos de afinidade inteligente.</p>
-                    </div>
-                    <div class="mt-8 overflow-hidden rounded-2xl h-48 md:h-64">
-                        <img alt="Conexão Global" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnjkZpirlb2j7E8fIJxipjztQvRjZi3TvS_8YxXAfL0jLtmp2qxikd7DGQfaNto_BAob0MBhuF1GrqzYfIf8uekR04U04xisKW_1NUyuLDLkJLfiPQrqyTGsZ6aWg1Fh0ERiXkfg55K8sJZp-awkbUfznXzflqs--83aK_DnjLQAUpQtja2fQ4C-iyD3w11eVzs0MvW_UXr5nYFkCCRZKFT0E361VMbsMIERq8OgfcEfmEL0AsDTVyqapq7uIN0KD_-ZRxZc6xEBM" />
-                    </div>
-                </div>
-                <div class="md:col-span-4 bg-primary rounded-[32px] p-10 flex flex-col justify-between text-white shadow-lg shadow-blue-500/10">
-                    <div>
-                        <h3 class="text-3xl font-bold mb-4">Privacy First</h3>
-                        <p class="text-white/80 text-lg">Privacidade não é opcional, é o nosso alicerce. Criptografia de ponta a ponta em todas as interações e controle total sobre seus dados.</p>
-                    </div>
-                    <div class="pt-8 flex justify-end">
-                        <span class="material-symbols-outlined text-[120px] opacity-20 rotate-12">lock_open</span>
-                    </div>
-                </div>
-                <div class="md:col-span-4 bg-white dark:bg-slate-800 rounded-[32px] p-10 shadow-sm border border-slate-200 dark:border-slate-700/30 hover:shadow-xl transition-all duration-500">
-                    <h3 class="text-3xl font-bold mb-4">Premium Experience</h3>
-                    <p class="text-slate-600 dark:text-slate-300 text-lg">Uma interface livre de ruídos, anúncios e distrações. Foque no que realmente importa: seu progresso.</p>
-                </div>
-                <div class="md:col-span-8 relative rounded-[32px] overflow-hidden group">
-                    <img alt="Interface NzolaNet" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnhcUAP9qTrsa1JlipZIcf7seDcOejZ4QHcK5ct8RJdoGjv1rt5DMUqCK5mvfkSMcJn476w4FfKLAdeNZhTKx9wE9vxds1mMhzloW6zOb0Z7T2MqA5u2KLnpy_w0WNC-9DBrAv5VOjMYeO-OB7gDetRAWiYAJDeM8uQ-l8c30-bax2DY8fvwAp8bZGVn4dPiPX-GJ9GRpMJ5vPAfxTtCKOIkuqrg5vihwj5aI3rMgIFoPHSXOXrjVqp1pSikn7UOTH_xSgDjFUXzA" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent flex flex-col justify-end p-10">
-                        <h4 class="text-white text-2xl font-bold mb-2">Analytics Preditivo</h4>
-                        <p class="text-white/70 max-w-sm">Entenda as tendências da sua indústria antes de todo mundo.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- CTA Section -->
-    <section class="py-24 overflow-hidden">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="bg-slate-900 rounded-[48px] p-12 md:p-24 relative overflow-hidden text-center md:text-left">
-                <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">Pronto para o próximo nível?</h2>
-                        <p class="text-slate-300 text-lg mb-8 max-w-lg">Junte-se à NzolaNet hoje e comece a construir as pontes para o seu futuro.</p>
-                        <button class="bg-primary text-white rounded-full px-12 py-5 text-base font-bold active:scale-95 transition-all">Criar Conta</button>
-                    </div>
-                    <div class="hidden lg:flex justify-end gap-6">
-                        <div class="space-y-6 animate-pulse">
-                            <div class="w-48 h-16 bg-white dark:bg-slate-800/5 rounded-2xl"></div>
-                            <div class="w-64 h-16 bg-white dark:bg-slate-800/5 rounded-2xl"></div>
-                            <div class="w-40 h-16 bg-white dark:bg-slate-800/5 rounded-2xl"></div>
-                        </div>
-                        <div class="space-y-6 pt-12 animate-pulse" style="animation-delay: 150ms">
-                            <div class="w-64 h-16 bg-white dark:bg-slate-800/10 rounded-2xl"></div>
-                            <div class="w-48 h-16 bg-white dark:bg-slate-800/10 rounded-2xl"></div>
-                            <div class="w-56 h-16 bg-white dark:bg-slate-800/10 rounded-2xl"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-            </div>
-        </div>
-    </section>
+      <div class="rounded-[32px] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <img alt="Utilizadores numa rede social" class="w-full h-auto object-cover" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80" />
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 bg-white dark:bg-slate-800">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="mb-14 text-center">
+        <h2 class="text-4xl font-bold text-slate-950 dark:text-white mb-4">Funcionalidades principais</h2>
+        <p class="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Tudo que o enunciado pede para gerir utilizadores, publicacoes, bazes, comentarios, feed e notificacoes.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <article class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-8">
+          <span class="material-symbols-outlined text-4xl text-primary">dynamic_feed</span>
+          <h3 class="text-2xl font-bold mt-5 mb-3 text-slate-950 dark:text-white">Feed cronologico</h3>
+          <p class="text-slate-600 dark:text-slate-300">Veja publicacoes recentes no feed geral ou apenas de pessoas seguidas.</p>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-8">
+          <span class="material-symbols-outlined text-4xl text-primary">forum</span>
+          <h3 class="text-2xl font-bold mt-5 mb-3 text-slate-950 dark:text-white">Bazes e comentarios</h3>
+          <p class="text-slate-600 dark:text-slate-300">Interaja com publicacoes, com protecao contra bazes duplicados.</p>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-8">
+          <span class="material-symbols-outlined text-4xl text-primary">notifications</span>
+          <h3 class="text-2xl font-bold mt-5 mb-3 text-slate-950 dark:text-white">Notificacoes</h3>
+          <p class="text-slate-600 dark:text-slate-300">Receba avisos quando houver baze, comentario ou novo seguidor.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="bg-slate-900 rounded-[32px] p-10 md:p-16 text-center">
+        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">Pronto para comecar?</h2>
+        <p class="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">Crie a sua conta e comece a publicar na NzolaNet.</p>
+        <button routerLink="/registrar" class="bg-primary text-white rounded-full px-12 py-5 text-base font-bold active:scale-95 transition-all">Criar conta</button>
+      </div>
+    </div>
+  </section>
 </main>

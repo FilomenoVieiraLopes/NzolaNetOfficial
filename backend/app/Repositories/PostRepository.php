@@ -73,4 +73,13 @@ class PostRepository implements IPostRepository
             ->orderBy('created_at', 'desc')
             ->paginate(10);
     }
+
+    public function getByUser(string $userId): LengthAwarePaginator
+    {
+        return Post::with('user')
+            ->withCount(['bazes', 'comments'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+    }
 }

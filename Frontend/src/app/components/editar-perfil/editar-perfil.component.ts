@@ -1,124 +1,122 @@
-import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { UserService } from '../../services/user.service';
+import { Router, RouterModule } from '@angular/router';
+import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
-import { RouterLink } from "@angular/router";
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-editar-perfil',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './editar-perfil.component.html',
   styleUrl: './editar-perfil.component.css'
 })
 export class EditarPerfilComponent implements OnInit {
-  private userService = inject(UserService);
   private authService = inject(AuthService);
+  private userService = inject(UserService);
+  private router = inject(Router);
 
-  avatarPreview: string | null = null;
-  coverPreview: string | null = null;
-  uploadingAvatar = false;
-  uploadError: string = '';
-
-  avatar_url='';
-  cover_url='';
-  fullName = '';
+  user: User | null = null;
+  name = '';
   bio = '';
-  location = '';
-  website = '';
+  privacy: 'public' | 'private' = 'public';
+  avatarPreview: string | null = null;
+  avatarFile: File | null = null;
+  isSaving = false;
+  error = '';
 
   ngOnInit(): void {
-    this.loadProfile();
-  }
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.router.navigate(['/login']);
+      return;
+    }
 
-  private loadProfile(): void {
-    const userId = this.authService.getCurrentUserId();
-    if (!userId) return;
-
-    this.userService.getProfile(userId).subscribe({
-      next: (profile) => {
-        this.avatar_url=profile.avatar_url ||'';
-        this.cover_url= profile.cover_url ||'';
-        this.fullName = profile.name || '';
-        this.bio = profile.bio || '';
-        this.avatarPreview = profile.avatar_url || null;
-        this.coverPreview = profile.cover_url || null;
-      },
-      error: (err) => console.error('Erro ao carregar perfil:', err)
+    this.userService.getUser(currentUser.id).subscribe({
+      next: (user) => this.fillForm(user),
+      error: () => this.fillForm(currentUser)
     });
   }
 
   onAvatarSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
+    const file = input.files?.[0];
+    if (!file) return;
 
-    const file = input.files[0];
-
-    // Validação básica
-    if (!file.type.startsWith('image/')) {
-      this.uploadError = 'Por favor, seleciona uma imagem válida.';
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      this.error = 'A foto deve ser JPG, PNG, WEBP ou GIF.';
+      input.value = '';
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      this.uploadError = 'A imagem não pode ser maior que 2MB.';
+    if (file.size > 5 * 1024 * 1024) {
+      this.error = 'A foto deve ter no maximo 5MB.';
+      input.value = '';
       return;
     }
 
-    // Preview local
+    this.error = '';
+    this.avatarFile = file;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      this.avatarPreview = e.target?.result as string;
-    };
+    reader.onload = () => this.avatarPreview = reader.result as string;
     reader.readAsDataURL(file);
-
-    // Upload para o backend
-    this.uploadAvatar(file);
   }
 
-  private uploadAvatar(file: File): void {
-    const userId = this.authService.getCurrentUserId();
-    if (!userId) {
-      this.uploadError = 'Utilizador não autenticado.';
-      return;
-    }
+  save(): void {
+    if (!this.user || !this.name.trim()) return;
 
-    this.uploadingAvatar = true;
-    this.uploadError = '';
-
-    this.userService.updateAvatar(userId, file).subscribe({
+    this.isSaving = true;
+    this.error = '';
+    this.userService.updateUser(this.user.id, {
+      name: this.name.trim(),
+      bio: this.bio.trim() || null,
+      privacy: this.privacy
+    }).subscribe({
       next: (response) => {
-        this.avatarPreview = response.avatar_url;
-        this.uploadingAvatar = false;
+        if (this.avatarFile) {
+          this.userService.updateAvatar(response.user.id, this.avatarFile).subscribe({
+            next: (avatarResponse) => this.finishSave(avatarResponse.user || {
+              ...response.user,
+              avatar_url: avatarResponse.avatar_url
+            }),
+            error: (error) => {
+              console.error('Error updating avatar', error);
+              this.error = this.validationMessage(error);
+              this.isSaving = false;
+            }
+          });
+          return;
+        }
+
+        this.finishSave(response.user);
       },
-      error: (err) => {
-        console.error('Erro ao fazer upload de avatar:', err);
-        this.uploadError = err.error?.message || 'Erro ao fazer upload do avatar.';
-        this.uploadingAvatar = false;
+      error: (error) => {
+        console.error('Error updating profile', error);
+        this.error = this.validationMessage(error);
+        this.isSaving = false;
       }
     });
   }
 
-  triggerAvatarUpload(): void {
-    const input = document.getElementById('avatarInput') as HTMLInputElement;
-    input?.click();
+  private fillForm(user: User): void {
+    this.user = user;
+    this.name = user.name;
+    this.bio = user.bio || '';
+    this.privacy = user.privacy === 'private' ? 'private' : 'public';
+    this.avatarPreview = user.avatar_url;
   }
 
-  triggerCoverUpload(): void {
-    const input = document.getElementById('coverInput') as HTMLInputElement;
-    input?.click();
+  private finishSave(user: User): void {
+    this.authService.setCurrentUser(user);
+    this.isSaving = false;
+    this.router.navigate(['/app/perfil']);
   }
 
-  saveChanges(): void {
-    // Implementar depois - PUT /api/users/{id}
-    console.log('Salvando alterações...', {
-      fullName: this.fullName,
-      bio: this.bio,
-      location: this.location,
-      website: this.website,
-      avatar_url: this.avatar_url,
-      cover_url: this.cover_url
-    });
+  private validationMessage(error: unknown): string {
+    const response = error as { error?: { message?: string; errors?: Record<string, string[]> } };
+    const firstFieldError = response.error?.errors ? Object.values(response.error.errors)[0]?.[0] : null;
+    return firstFieldError || response.error?.message || 'Nao foi possivel guardar o perfil.';
   }
 }

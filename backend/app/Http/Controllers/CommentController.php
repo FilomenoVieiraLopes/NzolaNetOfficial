@@ -16,11 +16,15 @@ class CommentController extends Controller
     ) {}
 
     // GET /api/posts/{postId}/comments
-    public function index(string $postId): JsonResponse
+    public function index(Request $request, string $postId): JsonResponse
     {
         try {
             // Retorna comentarios de uma publicacao existente.
-            $comments = $this->commentService->getByPost($postId);
+            $comments = $this->commentService->getByPost(
+                $postId,
+                (int) $request->user()->id,
+                $request->user()->isAdmin()
+            );
 
             return response()->json($comments);
 

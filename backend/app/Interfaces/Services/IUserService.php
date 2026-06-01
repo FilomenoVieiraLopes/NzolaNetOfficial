@@ -8,6 +8,7 @@ use App\DTOs\User\UserResponseDTO;
 interface IUserService
 {
     public function getById(string $id, ?string $viewerId = null): UserResponseDTO;
+    public function search(string $term): array;
     public function update(string $id, UpdateUserDTO $dto): UserResponseDTO;
     public function updateAvatar(string $id, string $avatarUrl): UserResponseDTO;
     public function follow(string $followerId, string $followingId): void;

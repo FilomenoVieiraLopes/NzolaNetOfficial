@@ -6,6 +6,7 @@ use App\DTOs\User\RegisterUserDTO;
 use App\DTOs\User\UpdateUserDTO;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class UserRepository implements IUserRepository
@@ -20,6 +21,16 @@ class UserRepository implements IUserRepository
     {
         // Usado no login e recuperacao de senha.
         return User::where('email', $email)->first();
+    }
+
+    public function search(string $term): Collection
+    {
+        return User::query()
+            ->where('name', 'like', "%{$term}%")
+            ->orWhere('email', 'like', "%{$term}%")
+            ->orderBy('name')
+            ->limit(20)
+            ->get();
     }
 
     public function create(RegisterUserDTO $dto): User

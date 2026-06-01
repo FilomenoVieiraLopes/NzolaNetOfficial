@@ -17,13 +17,30 @@ class PostController extends Controller
     ) {}
 
     // GET /api/posts
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         // Feed principal: todas as publicacoes recentes, paginadas.
         $posts = $this->postService->getAll();
 
         // Converte modelos em DTOs para controlar o formato enviado ao frontend.
-        $posts->through(fn($post) => PostResponseDTO::fromModel($post)->toArray());
+        $posts->through(fn($post) => PostResponseDTO::fromModel(
+            $post,
+            (int) $request->user()->id,
+            $request->user()->isAdmin()
+        )->toArray());
+
+        return response()->json($posts);
+    }
+
+    // GET /api/users/{userId}/posts
+    public function byUser(Request $request, string $userId): JsonResponse
+    {
+        $posts = $this->postService->getByUser($userId);
+        $posts->through(fn($post) => PostResponseDTO::fromModel(
+            $post,
+            (int) $request->user()->id,
+            $request->user()->isAdmin()
+        )->toArray());
 
         return response()->json($posts);
     }
@@ -34,7 +51,11 @@ class PostController extends Controller
         // Feed personalizado: apenas publicacoes de utilizadores seguidos.
         $posts = $this->postService->getFeed((string) $request->user()->id);
 
-        $posts->through(fn($post) => PostResponseDTO::fromModel($post)->toArray());
+        $posts->through(fn($post) => PostResponseDTO::fromModel(
+            $post,
+            (int) $request->user()->id,
+            $request->user()->isAdmin()
+        )->toArray());
 
         return response()->json($posts);
     }
@@ -61,8 +82,8 @@ class PostController extends Controller
         // Cada publicacao precisa de texto e pode receber imagem e/ou video.
         $validated = $request->validate([
             'content' => 'required|string|max:2000',
-            'image'   => 'sometimes|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'video'   => 'sometimes|mimes:mp4,mov,avi|max:51200',
+            'image'   => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'video'   => 'sometimes|nullable|file|mimes:mp4,mov,avi|max:51200',
         ]);
 
         // Guarda a imagem no disco publico quando enviada.
@@ -109,15 +130,15 @@ class PostController extends Controller
         // Campos opcionais permitem atualizar so texto, so imagem ou so video.
         $validated = $request->validate([
             'content' => 'sometimes|string|max:2000',
-            'image'   => 'sometimes|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'video'   => 'sometimes|mimes:mp4,mov,avi|max:51200',
+            'image'   => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'video'   => 'sometimes|nullable|file|mimes:mp4,mov,avi|max:51200',
         ]);
 
         try {
             // Confirma autoria antes de fazer upload, evitando ficheiros orfaos.
             $existingPost = $this->postService->getById($id);
 
-            if ((int) $existingPost->user_id !== (int) $request->user()->id) {
+            if (!$request->user()->isAdmin() && (int) $existingPost->user_id !== (int) $request->user()->id) {
                 return response()->json([
                     'message' => 'Sem permissao para editar esta publicacao.',
                 ], 403);
@@ -148,7 +169,12 @@ class PostController extends Controller
 
         try {
             $dto = UpdatePostDTO::fromArray($data);
-            $post = $this->postService->update($id, (string) $request->user()->id, $dto);
+            $post = $this->postService->update(
+                $id,
+                (string) $request->user()->id,
+                $dto,
+                $request->user()->isAdmin()
+            );
 
             return response()->json([
                 'message' => 'Publicacao actualizada com sucesso.',
@@ -166,8 +192,12 @@ class PostController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         try {
-            // O service garante que so o autor apaga a publicacao.
-            $this->postService->delete($id, (string) $request->user()->id);
+            // O service garante autoria; admin pode moderar publicacoes.
+            $this->postService->delete(
+                $id,
+                (string) $request->user()->id,
+                $request->user()->isAdmin()
+            );
 
             return response()->json([
                 'message' => 'Publicacao eliminada com sucesso.',

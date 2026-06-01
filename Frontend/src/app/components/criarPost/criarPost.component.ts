@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 
 @Component({
@@ -12,32 +13,26 @@ import { FeedService } from '../../services/feed.service';
 })
 export class CriarPostComponent {
   private feedService = inject(FeedService);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
-  isPublic: boolean = true;
-  postText: string = '';
+  currentUser = this.authService.getCurrentUser();
+  postText = '';
   selectedImage: string | ArrayBuffer | null = null;
   selectedMediaType: 'image' | 'video' | null = null;
-  showEmojiPicker: boolean = false;
-  isPublishing: boolean = false;
+  selectedFile: File | null = null;
+  showEmojiPicker = false;
+  isPublishing = false;
+  emojis: string[] = [':)', ':D', '<3', '+1', '!!', '?'];
 
-  emojis: string[] = ['😀', '😂', '😍', '🙏', '👍', '🔥', '🎉', '💡', '✨', '🙌', '🤔', '😎'];
-
-  toggleVisibility() {
-    this.isPublic = !this.isPublic;
-  }
-
-  publishPost() {
-    if (!this.postText.trim() && !this.selectedImage) return;
+  publishPost(): void {
+    if (!this.postText.trim() && !this.selectedFile) return;
 
     this.isPublishing = true;
-    
     this.feedService.createPost({
       content: this.postText,
-      media_url: this.selectedImage as string,
-      media_type: this.selectedMediaType,
-      is_public: this.isPublic,
-      location: this.selectedLocation
+      image: this.selectedMediaType === 'image' ? this.selectedFile : null,
+      video: this.selectedMediaType === 'video' ? this.selectedFile : null
     }).subscribe({
       next: () => {
         this.isPublishing = false;
@@ -45,92 +40,41 @@ export class CriarPostComponent {
       },
       error: (err) => {
         console.error('Error publishing post', err);
+        alert(err?.error?.message || 'Nao foi possivel publicar. Verifique o conteudo e tente novamente.');
         this.isPublishing = false;
       }
     });
   }
 
-  triggerFileInput(fileInput: HTMLInputElement) {
+  triggerFileInput(fileInput: HTMLInputElement): void {
     fileInput.click();
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.type.startsWith('video/')) {
-        this.selectedMediaType = 'video';
-      } else {
-        this.selectedMediaType = 'image';
-      }
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          this.selectedImage = e.target.result;
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    this.selectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
+    this.selectedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = () => this.selectedImage = reader.result;
+    reader.readAsDataURL(file);
   }
 
-  removeImage() {
+  removeImage(): void {
     this.selectedImage = null;
     this.selectedMediaType = null;
+    this.selectedFile = null;
   }
 
-  toggleEmojiPicker() {
+  toggleEmojiPicker(): void {
     this.showEmojiPicker = !this.showEmojiPicker;
-    if (this.showEmojiPicker) {
-      this.showLocationPicker = false;
-      this.showGifPicker = false;
-    }
   }
 
-  addEmoji(emoji: string) {
+  addEmoji(emoji: string): void {
     this.postText += emoji;
     this.showEmojiPicker = false;
-  }
-
-  showLocationPicker: boolean = false;
-  locations: string[] = ['Luanda, Angola', 'Lisboa, Portugal', 'São Paulo, Brasil', 'Maputo, Moçambique'];
-  selectedLocation: string | null = null;
-
-  toggleLocationPicker() {
-    this.showLocationPicker = !this.showLocationPicker;
-    if (this.showLocationPicker) {
-      this.showEmojiPicker = false;
-      this.showGifPicker = false;
-    }
-  }
-
-  selectLocation(loc: string) {
-    this.selectedLocation = loc;
-    this.showLocationPicker = false;
-  }
-
-  removeLocation() {
-    this.selectedLocation = null;
-  }
-
-  showGifPicker: boolean = false;
-  gifs: string[] = [
-    'https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif',
-    'https://media.tenor.com/1-qA2hR3oKMAAAAC/good-morning.gif',
-    'https://media.tenor.com/bK1Np_0QpP4AAAAC/wow-cat.gif',
-    'https://media.tenor.com/Z4O8E1kE_5MAAAAC/dancing-duck.gif'
-  ];
-
-  toggleGifPicker() {
-    this.showGifPicker = !this.showGifPicker;
-    if (this.showGifPicker) {
-      this.showEmojiPicker = false;
-      this.showLocationPicker = false;
-    }
-  }
-
-  selectGif(gifUrl: string) {
-    this.selectedMediaType = 'image';
-    this.selectedImage = gifUrl;
-    this.showGifPicker = false;
   }
 }

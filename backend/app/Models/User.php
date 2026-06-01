@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -84,5 +86,33 @@ class User extends Authenticatable
     {
         // Centraliza a verificacao de permissao administrativa.
         return $this->role === 'admin';
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://127.0.0.1:4200'), '/');
+        $resetUrl = URL::query($frontendUrl . '/resetar-senha', [
+            'token' => $token,
+            'email' => $this->email,
+        ]);
+
+        $this->notify(new class($resetUrl) extends \Illuminate\Notifications\Notification {
+            public function __construct(private readonly string $resetUrl) {}
+
+            public function via(object $notifiable): array
+            {
+                return ['mail'];
+            }
+
+            public function toMail(object $notifiable): MailMessage
+            {
+                return (new MailMessage)
+                    ->subject('Recuperacao de senha - NzolaNet')
+                    ->greeting('Ola!')
+                    ->line('Recebemos um pedido para redefinir a senha da sua conta NzolaNet.')
+                    ->action('Definir nova senha', $this->resetUrl)
+                    ->line('Se nao fez este pedido, ignore este email.');
+            }
+        });
     }
 }
