@@ -73,6 +73,15 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
     });
   }
 
+  deleteNotification(notification: Notification, event?: Event): void {
+    event?.stopPropagation();
+
+    this.notificationService.deleteNotification(notification.id).subscribe({
+      next: () => this.notifications = this.notifications.filter((item) => item.id !== notification.id),
+      error: (error) => console.error('Error deleting notification', error)
+    });
+  }
+
   labelFor(type: string): string {
     const labels: Record<string, string> = {
       comment: 'comentou na sua publicacao',

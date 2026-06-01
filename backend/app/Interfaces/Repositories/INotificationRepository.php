@@ -11,4 +11,5 @@ interface INotificationRepository
     public function getByUser(string $userId): Collection;
     public function markAsRead(string $id, string $userId): bool;
     public function markAllAsRead(string $userId): bool;
+    public function delete(string $id, string $userId): bool;
 }

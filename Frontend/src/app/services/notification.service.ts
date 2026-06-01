@@ -22,4 +22,8 @@ export class NotificationService {
   markAllAsRead(): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${API_BASE_URL}/notifications/read-all`, {});
   }
+
+  deleteNotification(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${API_BASE_URL}/notifications/${id}`);
+  }
 }

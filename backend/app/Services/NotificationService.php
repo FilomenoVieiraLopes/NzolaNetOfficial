@@ -34,4 +34,10 @@ class NotificationService implements INotificationService
         // Atualizacao em massa limitada ao dono das notificacoes.
         $this->notificationRepository->markAllAsRead($userId);
     }
+
+    public function delete(string $id, string $userId): void
+    {
+        // Remove apenas se a notificacao pertencer ao utilizador autenticado.
+        $this->notificationRepository->delete($id, $userId);
+    }
 }

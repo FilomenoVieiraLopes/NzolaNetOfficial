@@ -50,4 +50,18 @@ class NotificationRepository implements INotificationRepository
             ->where('read', false)
             ->update(['read' => true]);
     }
+
+    public function delete(string $id, string $userId): bool
+    {
+        // A remocao tambem filtra por user_id para proteger notificacoes de terceiros.
+        $notification = Notification::where('id', $id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$notification) {
+            throw new \Exception('Notificacao nao encontrada.', 404);
+        }
+
+        return (bool) $notification->delete();
+    }
 }

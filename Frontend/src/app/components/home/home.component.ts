@@ -288,6 +288,20 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  deleteNotification(notification: Notification, event: Event): void {
+    event.stopPropagation();
+
+    this.notificationService.deleteNotification(notification.id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+        if (!notification.read) {
+          this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
+        }
+      },
+      error: (error) => console.error('Error deleting notification', error)
+    });
+  }
+
   labelForNotification(type: string): string {
     const labels: Record<string, string> = {
       comment: 'comentou na sua publicacao',

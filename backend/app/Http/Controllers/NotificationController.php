@@ -52,4 +52,22 @@ class NotificationController extends Controller
             'message' => 'Todas as notificacoes marcadas como lidas.',
         ]);
     }
+
+    // DELETE /api/notifications/{id}
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        try {
+            // A eliminacao e limitada ao dono da notificacao.
+            $this->notificationService->delete($id, (string) $request->user()->id);
+
+            return response()->json([
+                'message' => 'Notificacao eliminada com sucesso.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
 }

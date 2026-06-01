@@ -23,7 +23,7 @@
             <button *ngIf="unreadNotifications > 0" (click)="markAllNotificationsAsRead()" class="text-xs font-semibold text-primary hover:underline">Marcar lidas</button>
           </div>
           <div *ngIf="notifications.length === 0" class="px-5 py-6 text-sm text-on-surface-variant">Ainda nao existem notificacoes.</div>
-          <button *ngFor="let notification of notifications" (click)="openNotification(notification)" class="w-full text-left px-5 py-4 flex gap-3 border-b border-outline-variant/10 hover:bg-surface-container transition-colors">
+          <div *ngFor="let notification of notifications" (click)="openNotification(notification)" class="w-full text-left px-5 py-4 flex gap-3 border-b border-outline-variant/10 hover:bg-surface-container transition-colors cursor-pointer">
             <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
               <span class="material-symbols-outlined text-[22px]">{{ notification.type === 'follow' ? 'person_add' : notification.type === 'baze' ? 'favorite' : 'mode_comment' }}</span>
             </div>
@@ -34,8 +34,13 @@
               </p>
               <p class="mt-1 text-xs text-on-surface-variant truncate">{{ notification.post_excerpt || 'Toque para abrir' }}</p>
             </div>
-            <span *ngIf="!notification.read" class="mt-2 w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0"></span>
-          </button>
+            <div class="flex flex-col items-center gap-2 flex-shrink-0">
+              <span *ngIf="!notification.read" class="mt-1 w-2.5 h-2.5 rounded-full bg-primary"></span>
+              <button type="button" (click)="deleteNotification(notification, $event)" class="w-8 h-8 rounded-full text-on-surface-variant hover:bg-red-50 hover:text-red-600 flex items-center justify-center" title="Eliminar notificacao">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </div>
+          </div>
           <a routerLink="/app/notificacoes" (click)="showNotifications = false" class="block px-5 py-4 text-center text-sm font-bold text-primary hover:bg-surface-container">Ver todas</a>
         </section>
       </div>
