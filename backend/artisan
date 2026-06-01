@@ -1,4 +1,6 @@
-#!/usr/bin/env php
+cd ..\ 
+php artisan servecd ..\ 
+php artisan serve#!/usr/bin/env php
 <?php
 
 use Illuminate\Foundation\Application;

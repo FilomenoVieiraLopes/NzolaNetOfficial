@@ -7,5 +7,7 @@ export interface Comment {
   body: string;
   can_edit?: boolean;
   can_delete?: boolean;
+  bazes_count?: number;
+  has_bazed?: boolean;
   created_at: string;
 }

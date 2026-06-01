@@ -36,6 +36,13 @@ export class UserService {
     return this.http.post<{ message: string; avatar_url: string; user?: User }>(`${API_BASE_URL}/users/${id}/avatar`, formData);
   }
 
+  updateCover(id: number | string, cover: File): Observable<{ message: string; cover_url: string; user?: User }> {
+    const formData = new FormData();
+    formData.append('cover', cover);
+
+    return this.http.post<{ message: string; cover_url: string; user?: User }>(`${API_BASE_URL}/users/${id}/cover`, formData);
+  }
+
   follow(id: number | string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${API_BASE_URL}/users/${id}/follow`, {});
   }

@@ -70,6 +70,15 @@ class UserRepository implements IUserRepository
         return $user->fresh();
     }
 
+    public function updateCover(string $id, string $coverUrl): User
+    {
+        // Cover saved as public URL.
+        $user = User::findOrFail($id);
+        $user->update(['cover_url' => $coverUrl]);
+
+        return $user->fresh();
+    }
+
     public function delete(string $id): bool
     {
         // Mantido para uso futuro de administracao de utilizadores.

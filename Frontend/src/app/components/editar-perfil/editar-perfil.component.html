@@ -13,6 +13,23 @@
     <p *ngIf="error" class="rounded-2xl bg-red-50 border border-red-100 px-5 py-4 text-sm font-medium text-red-700">{{ error }}</p>
 
     <section class="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+      <div class="mb-4">
+        <div class="w-full h-40 md:h-48 rounded-xl overflow-hidden bg-surface-container dark:bg-slate-700 shadow-sm">
+          <img *ngIf="coverPreview" class="w-full h-full object-cover" [src]="coverPreview" alt="Capa">
+          <div *ngIf="!coverPreview" class="w-full h-full flex items-center justify-center text-on-surface-variant">
+            <span class="text-label-md">Sem imagem de capa</span>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <input #coverInput type="file" accept="image/*" class="hidden" (change)="onCoverSelected($event)">
+          <button (click)="coverInput.click()" class="inline-flex items-center gap-2 bg-surface-container border border-outline-variant px-4 py-2 rounded-full font-label-md hover:bg-surface-container-high transition-colors">
+            <span class="material-symbols-outlined text-[20px]">photo_size_select_large</span>
+            Alterar capa
+          </button>
+          <p class="mt-2 text-label-sm text-on-surface-variant">JPG, PNG, WEBP ou GIF ate 5MB.</p>
+        </div>
+      </div>
       <div class="flex flex-col sm:flex-row gap-6 sm:items-center">
         <div class="relative w-32 h-32 rounded-full overflow-hidden bg-surface-container dark:bg-slate-700 shadow-xl">
           <img *ngIf="avatarPreview" class="w-full h-full object-cover" [src]="avatarPreview" alt="Avatar">

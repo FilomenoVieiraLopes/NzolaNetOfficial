@@ -23,6 +23,8 @@ export class EditarPerfilComponent implements OnInit {
   privacy: 'public' | 'private' = 'public';
   avatarPreview: string | null = null;
   avatarFile: File | null = null;
+  coverPreview: string | null = null;
+  coverFile: File | null = null;
   isSaving = false;
   error = '';
 
@@ -64,6 +66,31 @@ export class EditarPerfilComponent implements OnInit {
     reader.readAsDataURL(file);
   }
 
+  onCoverSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      this.error = 'A imagem de capa deve ser JPG, PNG, WEBP ou GIF.';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.error = 'A imagem de capa deve ter no maximo 5MB.';
+      input.value = '';
+      return;
+    }
+
+    this.error = '';
+    this.coverFile = file;
+    const reader = new FileReader();
+    reader.onload = () => this.coverPreview = reader.result as string;
+    reader.readAsDataURL(file);
+  }
+
   save(): void {
     if (!this.user || !this.name.trim()) return;
 
@@ -75,14 +102,50 @@ export class EditarPerfilComponent implements OnInit {
       privacy: this.privacy
     }).subscribe({
       next: (response) => {
+        // If avatar selected, upload it first, then optionally upload cover.
         if (this.avatarFile) {
           this.userService.updateAvatar(response.user.id, this.avatarFile).subscribe({
-            next: (avatarResponse) => this.finishSave(avatarResponse.user || {
-              ...response.user,
-              avatar_url: avatarResponse.avatar_url
-            }),
+            next: (avatarResponse) => {
+              const userAfterAvatar = avatarResponse.user || {
+                ...response.user,
+                avatar_url: avatarResponse.avatar_url
+              };
+
+              if (this.coverFile) {
+                this.userService.updateCover(response.user.id, this.coverFile).subscribe({
+                  next: (coverResponse) => this.finishSave(coverResponse.user || {
+                    ...userAfterAvatar,
+                    cover_url: coverResponse.cover_url
+                  }),
+                  error: (error) => {
+                    console.error('Error updating cover', error);
+                    this.error = this.validationMessage(error);
+                    this.isSaving = false;
+                  }
+                });
+                return;
+              }
+
+              this.finishSave(userAfterAvatar);
+            },
             error: (error) => {
               console.error('Error updating avatar', error);
+              this.error = this.validationMessage(error);
+              this.isSaving = false;
+            }
+          });
+          return;
+        }
+
+        // If only cover selected, upload it.
+        if (this.coverFile) {
+          this.userService.updateCover(response.user.id, this.coverFile).subscribe({
+            next: (coverResponse) => this.finishSave(coverResponse.user || {
+              ...response.user,
+              cover_url: coverResponse.cover_url
+            }),
+            error: (error) => {
+              console.error('Error updating cover', error);
               this.error = this.validationMessage(error);
               this.isSaving = false;
             }
@@ -105,7 +168,8 @@ export class EditarPerfilComponent implements OnInit {
     this.name = user.name;
     this.bio = user.bio || '';
     this.privacy = user.privacy === 'private' ? 'private' : 'public';
-    this.avatarPreview = user.avatar_url;
+    this.avatarPreview = user.avatar_url ?? null;
+    this.coverPreview = user.cover_url ?? null;
   }
 
   private finishSave(user: User): void {

@@ -28,6 +28,8 @@ export class PerfilComponent implements OnInit {
   isLoading = true;
   error = '';
   isOwnProfile = false;
+  isFollowing = false;
+  isFollowLoading = false;
   editingPostId: number | null = null;
   editPostContent = '';
 
@@ -71,7 +73,13 @@ export class PerfilComponent implements OnInit {
 
   private loadProfileStats(userId: number): void {
     this.userService.getFollowers(userId).subscribe({
-      next: (followers) => this.followersCount = followers.length,
+      next: (followers) => {
+        this.followersCount = followers.length;
+        // Verificar se o currentUser está a seguir este perfil
+        if (this.currentUser) {
+          this.isFollowing = followers.some(f => f.id === this.currentUser?.id);
+        }
+      },
       error: (error) => console.error('Error loading followers', error)
     });
 
@@ -131,6 +139,40 @@ export class PerfilComponent implements OnInit {
     this.feedService.deletePost(post.id).subscribe({
       next: () => this.posts = this.posts.filter((item) => item.id !== post.id),
       error: (error) => console.error('Error deleting post', error)
+    });
+  }
+
+  followUser(): void {
+    if (!this.user || this.isFollowLoading) return;
+
+    this.isFollowLoading = true;
+    this.userService.follow(this.user.id).subscribe({
+      next: () => {
+        this.isFollowing = true;
+        this.followersCount += 1;
+        this.isFollowLoading = false;
+      },
+      error: (error) => {
+        console.error('Error following user', error);
+        this.isFollowLoading = false;
+      }
+    });
+  }
+
+  unfollowUser(): void {
+    if (!this.user || this.isFollowLoading) return;
+
+    this.isFollowLoading = true;
+    this.userService.unfollow(this.user.id).subscribe({
+      next: () => {
+        this.isFollowing = false;
+        this.followersCount = Math.max(0, this.followersCount - 1);
+        this.isFollowLoading = false;
+      },
+      error: (error) => {
+        console.error('Error unfollowing user', error);
+        this.isFollowLoading = false;
+      }
     });
   }
 

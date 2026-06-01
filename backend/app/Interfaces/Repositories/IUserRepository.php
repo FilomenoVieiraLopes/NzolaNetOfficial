@@ -15,5 +15,6 @@ interface IUserRepository
     public function create(RegisterUserDTO $dto): User;
     public function update(string $id, UpdateUserDTO $dto): User;
     public function updateAvatar(string $id, string $avatarUrl): User;
+    public function updateCover(string $id, string $coverUrl): User;
     public function delete(string $id): bool;
 }

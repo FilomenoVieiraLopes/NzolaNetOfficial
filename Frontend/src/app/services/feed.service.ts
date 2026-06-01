@@ -201,4 +201,24 @@ export class FeedService {
       }))
     );
   }
+
+  giveCommentBaze(commentId: number): Observable<ApiResponse<unknown>> {
+    return this.http.post<{ message: string; baze: unknown }>(`${API_BASE_URL}/comments/${commentId}/bazes`, {}).pipe(
+      map((response) => ({
+        status: 'success' as const,
+        data: response.baze,
+        message: response.message
+      }))
+    );
+  }
+
+  removeCommentBaze(commentId: number): Observable<ApiResponse<null>> {
+    return this.http.delete<{ message: string }>(`${API_BASE_URL}/comments/${commentId}/bazes`).pipe(
+      map((response) => ({
+        status: 'success' as const,
+        data: null,
+        message: response.message
+      }))
+    );
+  }
 }

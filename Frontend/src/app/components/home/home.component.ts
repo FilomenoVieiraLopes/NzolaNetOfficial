@@ -42,7 +42,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   commentDrafts: Record<number, string> = {};
   editingCommentId: number | null = null;
   editCommentText = '';
+  openCommentMenuId: number | null = null;
   targetPostId: number | null = null;
+  openMenuPostId: number | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private notificationTimer: ReturnType<typeof setInterval> | null = null;
   private feedTimer: ReturnType<typeof setInterval> | null = null;
@@ -112,6 +114,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   startEditPost(post: Post): void {
     this.editingPostId = post.id;
     this.editPostContent = post.content;
+    this.openMenuPostId = null;
+  }
+
+  toggleMenu(postId: number): void {
+    this.openMenuPostId = this.openMenuPostId === postId ? null : postId;
+  }
+
+  closeMenu(): void {
+    this.openMenuPostId = null;
   }
 
   cancelEditPost(): void {
@@ -183,6 +194,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   startEditComment(comment: Comment): void {
     this.editingCommentId = comment.id;
     this.editCommentText = comment.body;
+    this.openCommentMenuId = null;
+  }
+
+  toggleCommentMenu(commentId: number): void {
+    this.openCommentMenuId = this.openCommentMenuId === commentId ? null : commentId;
+  }
+
+  closeCommentMenu(): void {
+    this.openCommentMenuId = null;
   }
 
   cancelEditComment(): void {
@@ -212,6 +232,20 @@ export class HomeComponent implements OnInit, OnDestroy {
         post.comments_count = Math.max(0, post.comments_count - 1);
       },
       error: (error) => console.error('Error deleting comment', error)
+    });
+  }
+
+  giveCommentBaze(comment: Comment): void {
+    const request = comment.has_bazed
+      ? this.feedService.removeCommentBaze(comment.id)
+      : this.feedService.giveCommentBaze(comment.id);
+
+    request.subscribe({
+      next: () => {
+        comment.has_bazed = !comment.has_bazed;
+        comment.bazes_count = (comment.bazes_count || 0) + (comment.has_bazed ? 1 : -1);
+      },
+      error: (error) => console.error('Error giving comment baze', error)
     });
   }
 

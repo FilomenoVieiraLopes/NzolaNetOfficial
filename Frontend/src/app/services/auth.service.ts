@@ -37,6 +37,7 @@ export class AuthService {
 
   register(data: any): Observable<{ success: boolean; token: string; user: User }> {
     const payload = {
+      avatar_url: data.avatarUrl,
       name: data.fullName ?? data.name,
       email: data.email,
       password: data.password,

@@ -64,6 +64,16 @@ class UserService implements IUserService
         return UserResponseDTO::fromModel($user);
     }
 
+    public function updateCover(string $id, string $coverUrl): UserResponseDTO
+    {
+        // The controller stores the file; the service saves the URL on the profile.
+        $this->ensureUserExists($id);
+
+        $user = $this->userRepository->updateCover($id, $coverUrl);
+
+        return UserResponseDTO::fromModel($user);
+    }
+
     public function follow(string $followerId, string $followingId): void
     {
         // Ninguem pode seguir a si mesmo.

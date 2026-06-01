@@ -112,6 +112,39 @@ class UserController extends Controller
         }
     }
 
+    // POST /api/users/{id}/cover
+    public function updateCover(Request $request, string $id): JsonResponse
+    {
+        // Only the owner can change the cover.
+        if ((int) $request->user()->id !== (int) $id) {
+            return response()->json([
+                'message' => 'Sem permissao para alterar esta capa.',
+            ], 403);
+        }
+
+        $request->validate([
+            'cover' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+        ]);
+
+        $path = $request->file('cover')->store('covers', 'public');
+        $url = asset('storage/' . $path);
+
+        try {
+            $user = $this->userService->updateCover($id, $url);
+
+            return response()->json([
+                'message'    => 'Capa actualizada com sucesso.',
+                'cover_url'  => $user->cover_url,
+                'user'       => $user->toArray(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
+
     // POST /api/users/{id}/follow
     public function follow(Request $request, string $id): JsonResponse
     {

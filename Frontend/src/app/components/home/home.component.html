@@ -53,30 +53,40 @@
       <div *ngIf="isLoading" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl p-stack-md text-sm">A carregar publicacoes...</div>
       <div *ngIf="!isLoading && posts.length === 0" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl p-stack-md text-sm text-on-surface-variant">Nenhuma publicacao encontrada.</div>
 
-      <article *ngFor="let post of posts" [id]="'post-' + post.id" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] p-stack-md transition-shadow" [class.ring-2]="targetPostId === post.id" [class.ring-primary]="targetPostId === post.id">
+      <article *ngFor="let post of posts" [id]="'post-' + post.id" class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] p-stack-md transition-shadow" [class.ring-2]="targetPostId === post.id" [class.ring-primary]="targetPostId === post.id" (click)="closeMenu()">
         <div class="flex gap-3 mb-3">
           <ng-container *ngIf="post.author_avatar; else postAvatarFallback">
-            <img class="w-11 h-11 rounded-full object-cover" [src]="post.author_avatar" [alt]="post.author_name">
+            <img [routerLink]="['/app/perfil', post.user_id]" class="w-11 h-11 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity" [src]="post.author_avatar" [alt]="post.author_name">
           </ng-container>
           <ng-template #postAvatarFallback>
-            <div class="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+            <div [routerLink]="['/app/perfil', post.user_id]" class="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-primary/20 transition-colors">
               <span class="material-symbols-outlined text-[24px]">person</span>
             </div>
           </ng-template>
           <div class="flex-1">
             <div class="flex justify-between items-start gap-3">
-              <h3 class="font-bold text-body-md">{{ post.author_name }}</h3>
+              <h3 [routerLink]="['/app/perfil', post.user_id]" class="font-bold text-body-md">{{ post.author_name }}</h3>
               <div class="flex items-center gap-1">
                 <span class="text-label-sm text-on-surface-variant">{{ post.created_at | date:'shortTime' }}</span>
-                <button *ngIf="canEditPost(post) && editingPostId !== post.id" (click)="startEditPost(post)" class="w-8 h-8 rounded-full hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center" title="Editar publicacao">
-                  <span class="material-symbols-outlined text-[18px]">edit</span>
-                </button>
-                <button *ngIf="canDeletePost(post)" (click)="deletePost(post)" class="w-8 h-8 rounded-full hover:bg-red-50 text-on-surface-variant hover:text-red-600 flex items-center justify-center" title="Eliminar publicacao">
-                  <span class="material-symbols-outlined text-[18px]">delete</span>
-                </button>
+                <div *ngIf="canEditPost(post) || canDeletePost(post)" class="relative">
+                  <button (click)="toggleMenu(post.id); $event.stopPropagation()" class="w-8 h-8 rounded-full hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center" title="Opcoes">
+                    <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                  </button>
+                  <div *ngIf="openMenuPostId === post.id" class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-700 rounded-xl shadow-lg border border-outline-variant/20 dark:border-slate-600 z-20" (click)="$event.stopPropagation()">
+                    <button *ngIf="canEditPost(post) && editingPostId !== post.id" (click)="startEditPost(post)" class="w-full text-left px-4 py-3 text-sm text-on-surface dark:text-slate-100 hover:bg-surface-container dark:hover:bg-slate-600 flex items-center gap-2 border-b border-outline-variant/10 dark:border-slate-600">
+                      <span class="material-symbols-outlined text-[18px]">edit</span>
+                      Editar
+                    </button>
+                    <button *ngIf="canDeletePost(post)" (click)="deletePost(post)" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-slate-600 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <p class="text-label-sm text-on-secondary-container">Utilizador #{{ post.user_id }}</p>
+            <!-- Aqui em baixo estava o Utilizador #{{ post.user_id }} -->
+            <p class="text-label-sm text-on-secondary-container"></p>
           </div>
         </div>
 
@@ -113,7 +123,7 @@
           <div *ngIf="loadingComments[post.id]" class="py-3 text-sm text-on-surface-variant">A carregar comentarios...</div>
 
           <div *ngIf="!loadingComments[post.id] && post.comments?.length" class="space-y-3 mb-4">
-            <article *ngFor="let comment of post.comments" class="flex gap-3">
+            <article *ngFor="let comment of post.comments" class="flex gap-3" (click)="closeCommentMenu()">
               <ng-container *ngIf="comment.author_avatar; else inlineCommentAvatarFallback">
                 <img [src]="comment.author_avatar" [alt]="comment.author_name" class="w-9 h-9 rounded-full object-cover">
               </ng-container>
@@ -130,13 +140,25 @@
                       <p class="font-bold text-sm text-on-surface dark:text-white truncate">{{ comment.author_name }}</p>
                       <p class="text-[11px] text-on-surface-variant">{{ comment.created_at | date:'shortTime' }}</p>
                     </div>
-                    <div *ngIf="canEditComment(comment) || canDeleteComment(comment)" class="flex items-center gap-1 flex-shrink-0">
-                      <button *ngIf="canEditComment(comment) && editingCommentId !== comment.id" (click)="startEditComment(comment)" class="w-7 h-7 rounded-full hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center" title="Editar comentario">
-                        <span class="material-symbols-outlined text-[17px]">edit</span>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      <button (click)="giveCommentBaze(comment)" class="transition-colors" [class.text-red-600]="comment.has_bazed" [class.hover:text-red-600]="!comment.has_bazed" [class.text-on-surface-variant]="!comment.has_bazed" title="Baze">
+                        <span class="material-symbols-outlined text-[16px]" [style.font-variation-settings]="comment.has_bazed ? '\'FILL\' 1' : '\'FILL\' 0'">favorite</span>
                       </button>
-                      <button *ngIf="canDeleteComment(comment)" (click)="deleteComment(post, comment)" class="w-7 h-7 rounded-full hover:bg-red-50 text-on-surface-variant hover:text-red-600 flex items-center justify-center" title="Eliminar comentario">
-                        <span class="material-symbols-outlined text-[17px]">delete</span>
-                      </button>
+                      <div *ngIf="canEditComment(comment) || canDeleteComment(comment)" class="relative">
+                        <button (click)="toggleCommentMenu(comment.id); $event.stopPropagation()" class="w-6 h-6 text-on-surface-variant hover:text-primary flex items-center justify-center" title="Opcoes">
+                          <span class="material-symbols-outlined text-[16px]">more_vert</span>
+                        </button>
+                        <div *ngIf="openCommentMenuId === comment.id" class="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-700 rounded-xl shadow-lg border border-outline-variant/20 dark:border-slate-600 z-20" (click)="$event.stopPropagation()">
+                          <button *ngIf="canEditComment(comment) && editingCommentId !== comment.id" (click)="startEditComment(comment)" class="w-full text-left px-3 py-2 text-xs text-on-surface dark:text-slate-100 hover:bg-surface-container dark:hover:bg-slate-600 flex items-center gap-2 border-b border-outline-variant/10 dark:border-slate-600">
+                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                            Editar
+                          </button>
+                          <button *ngIf="canDeleteComment(comment)" (click)="deleteComment(post, comment)" class="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-slate-600 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[14px]">delete</span>
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

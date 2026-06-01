@@ -11,6 +11,7 @@ interface IUserService
     public function search(string $term): array;
     public function update(string $id, UpdateUserDTO $dto): UserResponseDTO;
     public function updateAvatar(string $id, string $avatarUrl): UserResponseDTO;
+    public function updateCover(string $id, string $coverUrl): UserResponseDTO;
     public function follow(string $followerId, string $followingId): void;
     public function unfollow(string $followerId, string $followingId): void;
     public function getFollowers(string $userId, ?string $viewerId = null): array;
