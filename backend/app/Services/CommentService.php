@@ -55,7 +55,7 @@ class CommentService implements ICommentService
             );
         }
 
-        return CommentResponseDTO::fromModel($comment);
+        return CommentResponseDTO::fromModel($comment, (int) $dto->user_id);
     }
 
     public function update(string $id, string $userId, UpdateCommentDTO $dto): CommentResponseDTO
@@ -73,7 +73,7 @@ class CommentService implements ICommentService
 
         $updated = $this->commentRepository->update($id, $dto);
 
-        return CommentResponseDTO::fromModel($updated);
+        return CommentResponseDTO::fromModel($updated, (int) $userId);
     }
 
     public function delete(string $id, string $userId, bool $isAdmin = false): void

@@ -51,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Bazes: reacoes nas publicacoes.
     Route::post('/posts/{postId}/bazes', [BazeController::class, 'store']);
     Route::delete('/posts/{postId}/bazes', [BazeController::class, 'destroy']);
+    Route::post('/comments/{commentId}/bazes', [BazeController::class, 'storeForComment']);
+    Route::delete('/comments/{commentId}/bazes', [BazeController::class, 'destroyForComment']);
 
     // Notificacoes do utilizador autenticado.
     Route::get('/notifications', [NotificationController::class, 'index']);
