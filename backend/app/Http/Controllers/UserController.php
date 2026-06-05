@@ -26,6 +26,14 @@ class UserController extends Controller
         );
     }
 
+    // GET /api/users/suggestions
+    public function suggestions(Request $request): JsonResponse
+    {
+        return response()->json(
+            $this->userService->suggestions((string) $request->user()->id)
+        );
+    }
+
     // GET /api/users/{id}
     public function show(Request $request, string $id): JsonResponse
     {

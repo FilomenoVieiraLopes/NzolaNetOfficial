@@ -25,6 +25,10 @@ export class UserService {
     });
   }
 
+  getSuggestions(): Observable<User[]> {
+    return this.http.get<User[]>(`${API_BASE_URL}/users/suggestions`);
+  }
+
   updateUser(id: number | string, data: Partial<Pick<User, 'name' | 'bio' | 'privacy' | 'cover_url' | 'avatar_url'>>): Observable<{ message: string; user: User }> {
     return this.http.put<{ message: string; user: User }>(`${API_BASE_URL}/users/${id}`, data);
   }

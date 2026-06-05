@@ -9,6 +9,7 @@ interface IUserService
 {
     public function getById(string $id, ?string $viewerId = null): UserResponseDTO;
     public function search(string $term): array;
+    public function suggestions(string $viewerId): array;
     public function update(string $id, UpdateUserDTO $dto): UserResponseDTO;
     public function updateAvatar(string $id, string $avatarUrl): UserResponseDTO;
     public function updateCover(string $id, string $coverUrl): UserResponseDTO;

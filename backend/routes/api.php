@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Utilizadores, perfil, avatar e relacoes de follow.
     Route::get('/users/search', [UserController::class, 'search']);
+    Route::get('/users/suggestions', [UserController::class, 'suggestions']);
     Route::get('/users/follow-requests', [UserController::class, 'followRequests']);
     Route::put('/users/follow-requests/{followerId}/accept', [UserController::class, 'acceptFollowRequest']);
     Route::delete('/users/follow-requests/{followerId}', [UserController::class, 'rejectFollowRequest']);

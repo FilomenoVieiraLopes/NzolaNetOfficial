@@ -50,6 +50,14 @@ class UserService implements IUserService
             ->toArray();
     }
 
+    public function suggestions(string $viewerId): array
+    {
+        return $this->userRepository
+            ->suggestions($viewerId)
+            ->map(fn($user) => UserResponseDTO::fromModel($user)->toArray())
+            ->toArray();
+    }
+
     public function update(string $id, UpdateUserDTO $dto): UserResponseDTO
     {
         // Garante erro controlado se o perfil nao existir.

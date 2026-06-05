@@ -32,6 +32,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   searchResults: User[] = [];
   isSearching = false;
   searchError = '';
+  suggestedUsers: User[] = [];
+  isLoadingSuggestions = false;
   notifications: Notification[] = [];
   unreadNotifications = 0;
   showNotifications = false;
@@ -54,6 +56,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.targetPostId = history.state?.postId ? Number(history.state.postId) : null;
     this.loadFeed('general');
     this.loadNotifications();
+    this.loadSuggestions();
     this.notificationTimer = setInterval(() => this.loadNotifications(false), 10000);
     this.feedTimer = setInterval(() => this.refreshFeed(), 12000);
     this.commentsTimer = setInterval(() => this.refreshOpenComments(), 8000);
@@ -278,6 +281,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  followSuggestedUser(user: User): void {
+    this.userService.follow(user.id).subscribe({
+      next: () => this.suggestedUsers = this.suggestedUsers.filter((item) => item.id !== user.id),
+      error: (error) => console.error('Error following suggested user', error)
+    });
+  }
+
   toggleNotifications(): void {
     this.showNotifications = !this.showNotifications;
     if (this.showNotifications) this.loadNotifications(false);
@@ -362,6 +372,22 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.searchError = 'Nao foi possivel pesquisar agora.';
         this.searchResults = [];
         this.isSearching = false;
+      }
+    });
+  }
+
+  private loadSuggestions(): void {
+    this.isLoadingSuggestions = true;
+
+    this.userService.getSuggestions().subscribe({
+      next: (users) => {
+        this.suggestedUsers = users.filter((user) => user.id !== this.currentUser?.id);
+        this.isLoadingSuggestions = false;
+      },
+      error: (error) => {
+        console.error('Error loading user suggestions', error);
+        this.suggestedUsers = [];
+        this.isLoadingSuggestions = false;
       }
     });
   }

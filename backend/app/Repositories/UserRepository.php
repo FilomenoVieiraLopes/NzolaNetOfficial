@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\DTOs\User\RegisterUserDTO;
 use App\DTOs\User\UpdateUserDTO;
 use App\Interfaces\Repositories\IUserRepository;
+use App\Models\Follow;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
@@ -30,6 +31,19 @@ class UserRepository implements IUserRepository
             ->orWhere('email', 'like', "%{$term}%")
             ->orderBy('name')
             ->limit(20)
+            ->get();
+    }
+
+    public function suggestions(string $viewerId, int $limit = 5): Collection
+    {
+        $relatedIds = Follow::where('follower_id', $viewerId)
+            ->pluck('following_id');
+
+        return User::query()
+            ->where('id', '!=', $viewerId)
+            ->whereNotIn('id', $relatedIds)
+            ->orderByDesc('created_at')
+            ->limit($limit)
             ->get();
     }
 
