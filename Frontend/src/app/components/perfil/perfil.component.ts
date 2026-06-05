@@ -1,7 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { Post } from '../../models/post.model';
 import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +19,7 @@ export class PerfilComponent implements OnInit {
   private userService = inject(UserService);
   private feedService = inject(FeedService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   currentUser = this.authService.getCurrentUser();
   user: User | null = null;
@@ -127,17 +128,24 @@ export class PerfilComponent implements OnInit {
     return !!post.can_delete || Number(post.user_id) === Number(this.currentUser?.id) || this.isAdmin();
   }
 
-  startEditPost(post: Post): void {
+  openPost(post: Post): void {
+    this.router.navigate(['/app/comentario'], { state: { postId: post.id } });
+  }
+
+  startEditPost(post: Post, event?: Event): void {
+    event?.stopPropagation();
     this.editingPostId = post.id;
     this.editPostContent = post.content;
   }
 
-  cancelEditPost(): void {
+  cancelEditPost(event?: Event): void {
+    event?.stopPropagation();
     this.editingPostId = null;
     this.editPostContent = '';
   }
 
-  savePost(post: Post): void {
+  savePost(post: Post, event?: Event): void {
+    event?.stopPropagation();
     const content = this.editPostContent.trim();
     if (!content) return;
 
@@ -150,7 +158,8 @@ export class PerfilComponent implements OnInit {
     });
   }
 
-  deletePost(post: Post): void {
+  deletePost(post: Post, event?: Event): void {
+    event?.stopPropagation();
     if (!confirm('Deseja eliminar esta publicacao?')) return;
 
     this.feedService.deletePost(post.id).subscribe({
