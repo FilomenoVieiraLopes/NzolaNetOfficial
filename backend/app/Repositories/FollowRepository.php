@@ -16,11 +16,12 @@ class FollowRepository implements IFollowRepository
             ->first();
     }
 
-    public function create(string $followerId, string $followingId): Follow
+    public function create(string $followerId, string $followingId, string $status = 'accepted'): Follow
     {
         return Follow::create([
             'follower_id'  => $followerId,
             'following_id' => $followingId,
+            'status'       => $status,
         ]);
     }
 
@@ -37,6 +38,7 @@ class FollowRepository implements IFollowRepository
         // Quem segue este utilizador.
         return Follow::with('follower')
             ->where('following_id', $userId)
+            ->where('status', 'accepted')
             ->get();
     }
 
@@ -45,6 +47,24 @@ class FollowRepository implements IFollowRepository
         // Quem este utilizador segue.
         return Follow::with('following')
             ->where('follower_id', $userId)
+            ->where('status', 'accepted')
             ->get();
+    }
+
+    public function getPendingRequests(string $userId): Collection
+    {
+        return Follow::with('follower')
+            ->where('following_id', $userId)
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function accept(string $followerId, string $followingId): bool
+    {
+        return Follow::where('follower_id', $followerId)
+            ->where('following_id', $followingId)
+            ->where('status', 'pending')
+            ->update(['status' => 'accepted']);
     }
 }

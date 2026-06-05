@@ -14,6 +14,6 @@ interface IPostService
     public function update(string $id, string $userId, UpdatePostDTO $dto, bool $isAdmin = false): PostResponseDTO;
     public function delete(string $id, string $userId, bool $isAdmin = false): void;
     public function getFeed(string $userId): LengthAwarePaginator;
-    public function getAll(): LengthAwarePaginator;
-    public function getByUser(string $userId): LengthAwarePaginator;
+    public function getAll(?string $viewerId = null): LengthAwarePaginator;
+    public function getByUser(string $userId, ?string $viewerId = null): LengthAwarePaginator;
 }

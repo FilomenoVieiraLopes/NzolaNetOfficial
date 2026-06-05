@@ -150,10 +150,13 @@ class UserController extends Controller
     {
         try {
             // O autenticado segue o utilizador indicado na rota.
-            $this->userService->follow((string) $request->user()->id, $id);
+            $status = $this->userService->follow((string) $request->user()->id, $id);
 
             return response()->json([
-                'message' => 'Utilizador seguido com sucesso.',
+                'message' => $status === 'pending'
+                    ? 'Pedido para seguir enviado com sucesso.'
+                    : 'Utilizador seguido com sucesso.',
+                'status' => $status,
             ]);
 
         } catch (\Exception $e) {
@@ -172,6 +175,48 @@ class UserController extends Controller
 
             return response()->json([
                 'message' => 'Deixaste de seguir o utilizador.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    // GET /api/users/follow-requests
+    public function followRequests(Request $request): JsonResponse
+    {
+        return response()->json(
+            $this->userService->getPendingFollowRequests((string) $request->user()->id)
+        );
+    }
+
+    // PUT /api/users/follow-requests/{followerId}/accept
+    public function acceptFollowRequest(Request $request, string $followerId): JsonResponse
+    {
+        try {
+            $this->userService->acceptFollowRequest((string) $request->user()->id, $followerId);
+
+            return response()->json([
+                'message' => 'Pedido para seguir aceite com sucesso.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    // DELETE /api/users/follow-requests/{followerId}
+    public function rejectFollowRequest(Request $request, string $followerId): JsonResponse
+    {
+        try {
+            $this->userService->rejectFollowRequest((string) $request->user()->id, $followerId);
+
+            return response()->json([
+                'message' => 'Pedido para seguir rejeitado.',
             ]);
 
         } catch (\Exception $e) {

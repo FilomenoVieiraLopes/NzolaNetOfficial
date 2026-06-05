@@ -29,7 +29,9 @@ export class PerfilComponent implements OnInit {
   error = '';
   isOwnProfile = false;
   isFollowing = false;
+  followStatus: string | null = null;
   isFollowLoading = false;
+  pendingRequests: User[] = [];
   editingPostId: number | null = null;
   editPostContent = '';
 
@@ -54,14 +56,28 @@ export class PerfilComponent implements OnInit {
     this.followersCount = 0;
     this.followingCount = 0;
     this.isOwnProfile = Number(this.currentUser?.id) === Number(userId);
+    this.isFollowing = false;
+    this.followStatus = null;
+    this.pendingRequests = [];
 
     this.userService.getUser(userId).subscribe({
       next: (user) => {
         this.user = user;
         this.isOwnProfile = Number(this.currentUser?.id) === Number(user.id);
+        this.followStatus = user.follow_status ?? null;
+        this.isFollowing = this.followStatus === 'accepted';
+        this.followersCount = user.followers_count ?? 0;
+        this.followingCount = user.following_count ?? 0;
         if (this.isOwnProfile) this.authService.setCurrentUser(user);
-        this.loadProfileStats(user.id);
-        this.loadPosts(user.id);
+        if (this.isOwnProfile) this.loadPendingRequests();
+
+        if (this.canViewPrivateContent()) {
+          this.loadProfileStats(user.id);
+          this.loadPosts(user.id);
+          return;
+        }
+
+        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading profile', error);
@@ -78,6 +94,7 @@ export class PerfilComponent implements OnInit {
         // Verificar se o currentUser está a seguir este perfil
         if (this.currentUser) {
           this.isFollowing = followers.some(f => f.id === this.currentUser?.id);
+          if (this.isFollowing) this.followStatus = 'accepted';
         }
       },
       error: (error) => console.error('Error loading followers', error)
@@ -147,9 +164,13 @@ export class PerfilComponent implements OnInit {
 
     this.isFollowLoading = true;
     this.userService.follow(this.user.id).subscribe({
-      next: () => {
-        this.isFollowing = true;
-        this.followersCount += 1;
+      next: (response) => {
+        this.followStatus = response.status || 'accepted';
+        this.isFollowing = this.followStatus === 'accepted';
+        if (this.isFollowing) {
+          this.followersCount += 1;
+          this.loadPosts(this.user!.id);
+        }
         this.isFollowLoading = false;
       },
       error: (error) => {
@@ -162,17 +183,50 @@ export class PerfilComponent implements OnInit {
   unfollowUser(): void {
     if (!this.user || this.isFollowLoading) return;
 
+    const wasFollowing = this.isFollowing;
     this.isFollowLoading = true;
     this.userService.unfollow(this.user.id).subscribe({
       next: () => {
         this.isFollowing = false;
-        this.followersCount = Math.max(0, this.followersCount - 1);
+        this.followStatus = null;
+        this.posts = [];
+        if (wasFollowing) {
+          this.followersCount = Math.max(0, this.followersCount - 1);
+        }
         this.isFollowLoading = false;
       },
       error: (error) => {
         console.error('Error unfollowing user', error);
         this.isFollowLoading = false;
       }
+    });
+  }
+
+  acceptRequest(request: User): void {
+    this.userService.acceptFollowRequest(request.id).subscribe({
+      next: () => {
+        this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+        this.followersCount += 1;
+      },
+      error: (error) => console.error('Error accepting follow request', error)
+    });
+  }
+
+  rejectRequest(request: User): void {
+    this.userService.rejectFollowRequest(request.id).subscribe({
+      next: () => this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id),
+      error: (error) => console.error('Error rejecting follow request', error)
+    });
+  }
+
+  canViewPrivateContent(): boolean {
+    return !!this.user?.can_view_private_content;
+  }
+
+  private loadPendingRequests(): void {
+    this.userService.getFollowRequests().subscribe({
+      next: (requests) => this.pendingRequests = requests,
+      error: (error) => console.error('Error loading follow requests', error)
     });
   }
 

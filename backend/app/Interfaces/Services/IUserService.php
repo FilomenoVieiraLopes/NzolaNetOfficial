@@ -12,8 +12,11 @@ interface IUserService
     public function update(string $id, UpdateUserDTO $dto): UserResponseDTO;
     public function updateAvatar(string $id, string $avatarUrl): UserResponseDTO;
     public function updateCover(string $id, string $coverUrl): UserResponseDTO;
-    public function follow(string $followerId, string $followingId): void;
+    public function follow(string $followerId, string $followingId): string;
     public function unfollow(string $followerId, string $followingId): void;
+    public function getPendingFollowRequests(string $userId): array;
+    public function acceptFollowRequest(string $ownerId, string $followerId): void;
+    public function rejectFollowRequest(string $ownerId, string $followerId): void;
     public function getFollowers(string $userId, ?string $viewerId = null): array;
     public function getFollowing(string $userId, ?string $viewerId = null): array;
 }

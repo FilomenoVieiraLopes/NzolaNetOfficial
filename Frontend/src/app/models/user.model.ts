@@ -8,4 +8,8 @@ export interface User {
   privacy: 'public' | 'private' | string;
   role?: 'user' | 'admin' | string;
   created_at?: string;
+  follow_status?: 'pending' | 'accepted' | string | null;
+  can_view_private_content?: boolean;
+  followers_count?: number;
+  following_count?: number;
 }

@@ -43,12 +43,34 @@
           <button *ngIf="isFollowing" (click)="unfollowUser()" [disabled]="isFollowLoading" class="flex-1 md:flex-none bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 px-6 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50">
             {{ isFollowLoading ? 'A processar...' : 'Deixar de seguir' }}
           </button>
-          <button *ngIf="!isFollowing" (click)="followUser()" [disabled]="isFollowLoading" class="flex-1 md:flex-none bg-primary text-white px-6 py-2 rounded-full font-semibold hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
-            {{ isFollowLoading ? 'A processar...' : 'Seguir' }}
+          <button *ngIf="!isFollowing" (click)="followStatus === 'pending' ? unfollowUser() : followUser()" [disabled]="isFollowLoading" class="flex-1 md:flex-none px-6 py-2 rounded-full font-semibold transition-colors shadow-sm disabled:opacity-50" [ngClass]="followStatus === 'pending' ? 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300' : 'bg-primary text-white hover:bg-primary/90'">
+            {{ isFollowLoading ? 'A processar...' : (followStatus === 'pending' ? 'Pedido enviado' : 'Seguir') }}
           </button>
         </div>
       </div>
     </header>
+
+    <section *ngIf="isOwnProfile && pendingRequests.length > 0" class="mt-8 bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm">
+      <h2 class="text-lg font-black text-gray-900 dark:text-white mb-4">Pedidos para seguir</h2>
+      <div class="space-y-3">
+        <div *ngFor="let request of pendingRequests" class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <img *ngIf="request.avatar_url" [src]="request.avatar_url" [alt]="request.name" class="w-11 h-11 rounded-full object-cover">
+            <div *ngIf="!request.avatar_url" class="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-[22px]">person</span>
+            </div>
+            <div class="min-w-0">
+              <p class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ request.name }}</p>
+              <p class="text-xs text-gray-500 truncate">{{ request.bio || 'Quer seguir-te.' }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button (click)="acceptRequest(request)" class="px-4 py-2 rounded-full bg-primary text-white text-xs font-bold">Aceitar</button>
+            <button (click)="rejectRequest(request)" class="px-4 py-2 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 text-xs font-bold">Rejeitar</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
       <section class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm">
@@ -64,7 +86,15 @@
       </aside>
     </div>
 
-    <section class="mt-8">
+    <section *ngIf="!canViewPrivateContent()" class="mt-8 bg-white dark:bg-slate-800 rounded-3xl p-10 text-center shadow-sm">
+      <span class="material-symbols-outlined text-5xl text-gray-400">lock</span>
+      <h2 class="mt-4 text-xl font-black text-gray-900 dark:text-white">Esta conta e privada</h2>
+      <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+        Pede para seguir este utilizador. Quando o pedido for aceite, poderas ver as publicacoes e mais detalhes do perfil.
+      </p>
+    </section>
+
+    <section *ngIf="canViewPrivateContent()" class="mt-8">
       <div class="flex border-b border-gray-200 dark:border-slate-700 mb-8 overflow-x-auto gap-8">
         <button class="px-2 py-4 text-sm font-bold text-primary border-b-2 border-primary whitespace-nowrap">
           {{ isOwnProfile ? 'Minhas publicacoes' : 'Publicacoes' }}

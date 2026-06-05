@@ -13,7 +13,7 @@ interface IPostRepository
     public function create(CreatePostDTO $dto): Post;
     public function update(string $id, UpdatePostDTO $dto): Post;
     public function delete(string $id): bool;
-    public function getAllPaginated(): LengthAwarePaginator;
+    public function getAllPaginated(?string $viewerId = null): LengthAwarePaginator;
     public function getFeedForUser(string $userId): LengthAwarePaginator;
     public function getByUser(string $userId): LengthAwarePaginator;
 }

@@ -5,7 +5,9 @@ namespace App\Services;
 use App\DTOs\Post\CreatePostDTO;
 use App\DTOs\Post\PostResponseDTO;
 use App\DTOs\Post\UpdatePostDTO;
+use App\Interfaces\Repositories\IFollowRepository;
 use App\Interfaces\Repositories\IPostRepository;
+use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Services\IPostService;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -14,6 +16,8 @@ class PostService implements IPostService
     public function __construct(
         // Repositorio concentra consultas e persistencia de publicacoes.
         private readonly IPostRepository $postRepository,
+        private readonly IUserRepository $userRepository,
+        private readonly IFollowRepository $followRepository,
     ) {}
 
     public function getById(string $id): PostResponseDTO
@@ -76,14 +80,30 @@ class PostService implements IPostService
         return $this->postRepository->getFeedForUser($userId);
     }
 
-    public function getAll(): LengthAwarePaginator
+    public function getAll(?string $viewerId = null): LengthAwarePaginator
     {
         // Feed principal: publicacoes recentes, em ordem cronologica inversa.
-        return $this->postRepository->getAllPaginated();
+        return $this->postRepository->getAllPaginated($viewerId);
     }
 
-    public function getByUser(string $userId): LengthAwarePaginator
+    public function getByUser(string $userId, ?string $viewerId = null): LengthAwarePaginator
     {
+        $profile = $this->userRepository->findById($userId);
+
+        if (!$profile) {
+            throw new \Exception('Utilizador nao encontrado.', 404);
+        }
+
+        if ($profile->privacy === 'private' && (int) $viewerId !== (int) $userId) {
+            $follow = $viewerId !== null
+                ? $this->followRepository->findByFollowerAndFollowing($viewerId, $userId)
+                : null;
+
+            if ($follow?->status !== 'accepted') {
+                throw new \Exception('Este perfil e privado.', 403);
+            }
+        }
+
         return $this->postRepository->getByUser($userId);
     }
 }

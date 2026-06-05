@@ -26,10 +26,16 @@ class UserService implements IUserService
             throw new \Exception('Utilizador nao encontrado.', 404);
         }
 
-        // Antes de devolver dados, aplica a regra de perfil publico/privado.
-        $this->ensureProfileCanBeViewed($id, $viewerId);
+        $follow = $viewerId !== null
+            ? $this->followRepository->findByFollowerAndFollowing($viewerId, $id)
+            : null;
+        $canViewPrivateContent = $this->canViewPrivateContent($id, $viewerId);
 
-        return UserResponseDTO::fromModel($user);
+        return UserResponseDTO::fromModel(
+            $user,
+            $follow?->status,
+            $canViewPrivateContent
+        );
     }
 
     public function search(string $term): array
@@ -74,14 +80,18 @@ class UserService implements IUserService
         return UserResponseDTO::fromModel($user);
     }
 
-    public function follow(string $followerId, string $followingId): void
+    public function follow(string $followerId, string $followingId): string
     {
         // Ninguem pode seguir a si mesmo.
         if ((int) $followerId === (int) $followingId) {
             throw new \Exception('Nao podes seguir-te a ti proprio.', 422);
         }
 
-        $this->ensureUserExists($followingId);
+        $target = $this->userRepository->findById($followingId);
+
+        if (!$target) {
+            throw new \Exception('Utilizador nao encontrado.', 404);
+        }
 
         // Evita duplicacao logica antes da constraint unica da base de dados.
         $existing = $this->followRepository->findByFollowerAndFollowing(
@@ -90,18 +100,25 @@ class UserService implements IUserService
         );
 
         if ($existing) {
+            if ($existing->status === 'pending') {
+                throw new \Exception('O pedido para seguir ja esta pendente.', 422);
+            }
+
             throw new \Exception('Ja segues este utilizador.', 422);
         }
 
-        $this->followRepository->create($followerId, $followingId);
+        $status = $target->privacy === 'private' ? 'pending' : 'accepted';
+        $this->followRepository->create($followerId, $followingId, $status);
 
-        // Notifica o perfil seguido sobre o novo seguidor.
+        // Notifica o perfil seguido sobre o novo seguidor ou pedido.
         $this->notificationRepository->create(
             $followingId,
-            'follow',
+            $status === 'pending' ? 'follow_request' : 'follow',
             $followerId,
             $followerId
         );
+
+        return $status;
     }
 
     public function unfollow(string $followerId, string $followingId): void
@@ -115,10 +132,49 @@ class UserService implements IUserService
         );
 
         if (!$existing) {
-            throw new \Exception('Nao segues este utilizador.', 422);
+            throw new \Exception('Nao existe relacao de seguimento com este utilizador.', 422);
         }
 
         $this->followRepository->delete($followerId, $followingId);
+    }
+
+    public function getPendingFollowRequests(string $userId): array
+    {
+        $this->ensureUserExists($userId);
+
+        return $this->followRepository
+            ->getPendingRequests($userId)
+            ->map(fn($follow) => UserResponseDTO::fromModel($follow->follower)->toArray())
+            ->toArray();
+    }
+
+    public function acceptFollowRequest(string $ownerId, string $followerId): void
+    {
+        $existing = $this->followRepository->findByFollowerAndFollowing($followerId, $ownerId);
+
+        if (!$existing || $existing->status !== 'pending') {
+            throw new \Exception('Pedido para seguir nao encontrado.', 404);
+        }
+
+        $this->followRepository->accept($followerId, $ownerId);
+
+        $this->notificationRepository->create(
+            $followerId,
+            'follow_accepted',
+            $ownerId,
+            $ownerId
+        );
+    }
+
+    public function rejectFollowRequest(string $ownerId, string $followerId): void
+    {
+        $existing = $this->followRepository->findByFollowerAndFollowing($followerId, $ownerId);
+
+        if (!$existing || $existing->status !== 'pending') {
+            throw new \Exception('Pedido para seguir nao encontrado.', 404);
+        }
+
+        $this->followRepository->delete($followerId, $ownerId);
     }
 
     public function getFollowers(string $userId, ?string $viewerId = null): array
@@ -168,11 +224,29 @@ class UserService implements IUserService
             return;
         }
 
-        // Seguidores autorizados podem ver perfis privados.
-        if ($viewerId !== null && $this->followRepository->findByFollowerAndFollowing($viewerId, $profileId)) {
+        if ($this->canViewPrivateContent($profileId, $viewerId)) {
             return;
         }
 
         throw new \Exception('Este perfil e privado.', 403);
+    }
+
+    public function canViewPrivateContent(string $profileId, ?string $viewerId): bool
+    {
+        $profile = $this->userRepository->findById($profileId);
+
+        if (!$profile || $profile->privacy === 'public') {
+            return true;
+        }
+
+        if ($viewerId !== null && (int) $profileId === (int) $viewerId) {
+            return true;
+        }
+
+        $follow = $viewerId !== null
+            ? $this->followRepository->findByFollowerAndFollowing($viewerId, $profileId)
+            : null;
+
+        return $follow?->status === 'accepted';
     }
 }

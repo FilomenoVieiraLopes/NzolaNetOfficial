@@ -51,11 +51,25 @@ class PostRepository implements IPostRepository
         return Post::findOrFail($id)->delete();
     }
 
-    public function getAllPaginated(): LengthAwarePaginator
+    public function getAllPaginated(?string $viewerId = null): LengthAwarePaginator
     {
         // Feed principal em ordem cronologica inversa.
+        $acceptedPrivateIds = $viewerId !== null
+            ? Follow::where('follower_id', $viewerId)
+                ->where('status', 'accepted')
+                ->pluck('following_id')
+            : collect();
+
         return Post::with('user')
             ->withCount(['bazes', 'comments'])
+            ->where(function ($query) use ($viewerId, $acceptedPrivateIds) {
+                $query->whereHas('user', fn($userQuery) => $userQuery->where('privacy', 'public'));
+
+                if ($viewerId !== null) {
+                    $query->orWhere('user_id', $viewerId)
+                        ->orWhereIn('user_id', $acceptedPrivateIds);
+                }
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
     }
@@ -64,6 +78,7 @@ class PostRepository implements IPostRepository
     {
         // Primeiro descobre quem o utilizador segue.
         $followingIds = Follow::where('follower_id', $userId)
+            ->where('status', 'accepted')
             ->pluck('following_id');
 
         // Depois retorna apenas posts desses utilizadores.

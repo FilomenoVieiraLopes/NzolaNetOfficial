@@ -20,7 +20,7 @@ class PostController extends Controller
     public function index(Request $request): JsonResponse
     {
         // Feed principal: todas as publicacoes recentes, paginadas.
-        $posts = $this->postService->getAll();
+        $posts = $this->postService->getAll((string) $request->user()->id);
 
         // Converte modelos em DTOs para controlar o formato enviado ao frontend.
         $posts->through(fn($post) => PostResponseDTO::fromModel(
@@ -35,14 +35,21 @@ class PostController extends Controller
     // GET /api/users/{userId}/posts
     public function byUser(Request $request, string $userId): JsonResponse
     {
-        $posts = $this->postService->getByUser($userId);
-        $posts->through(fn($post) => PostResponseDTO::fromModel(
-            $post,
-            (int) $request->user()->id,
-            $request->user()->isAdmin()
-        )->toArray());
+        try {
+            $posts = $this->postService->getByUser($userId, (string) $request->user()->id);
+            $posts->through(fn($post) => PostResponseDTO::fromModel(
+                $post,
+                (int) $request->user()->id,
+                $request->user()->isAdmin()
+            )->toArray());
 
-        return response()->json($posts);
+            return response()->json($posts);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
     }
 
     // GET /api/posts/feed

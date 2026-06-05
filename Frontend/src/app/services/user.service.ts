@@ -43,8 +43,8 @@ export class UserService {
     return this.http.post<{ message: string; cover_url: string; user?: User }>(`${API_BASE_URL}/users/${id}/cover`, formData);
   }
 
-  follow(id: number | string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${API_BASE_URL}/users/${id}/follow`, {});
+  follow(id: number | string): Observable<{ message: string; status?: string }> {
+    return this.http.post<{ message: string; status?: string }>(`${API_BASE_URL}/users/${id}/follow`, {});
   }
 
   unfollow(id: number | string): Observable<{ message: string }> {
@@ -57,5 +57,17 @@ export class UserService {
 
   getFollowing(id: number | string): Observable<User[]> {
     return this.http.get<User[]>(`${API_BASE_URL}/users/${id}/following`);
+  }
+
+  getFollowRequests(): Observable<User[]> {
+    return this.http.get<User[]>(`${API_BASE_URL}/users/follow-requests`);
+  }
+
+  acceptFollowRequest(followerId: number | string): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${API_BASE_URL}/users/follow-requests/${followerId}/accept`, {});
+  }
+
+  rejectFollowRequest(followerId: number | string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${API_BASE_URL}/users/follow-requests/${followerId}`);
   }
 }
