@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Events\NotificationCreated;
 use App\Interfaces\Repositories\INotificationRepository;
 use App\Models\Notification;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,13 +12,17 @@ class NotificationRepository implements INotificationRepository
     public function create(string $userId, string $type, string $relatedId, ?string $actorId = null, ?string $postId = null): Notification
     {
         // related_id aponta para o recurso que causou a notificacao.
-        return Notification::create([
+        $notification = Notification::create([
             'user_id'    => $userId,
             'actor_id'   => $actorId,
             'type'       => $type,
             'related_id' => $relatedId,
             'post_id'    => $postId,
         ]);
+
+        event(new NotificationCreated($notification));
+
+        return $notification;
     }
 
     public function getByUser(string $userId): Collection

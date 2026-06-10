@@ -82,7 +82,7 @@
       <aside class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm flex flex-col justify-between h-full gap-6">
         <div><span class="block text-3xl font-black text-gray-900 dark:text-white">{{ followersCount }}</span><span class="text-[11px] text-gray-500 uppercase tracking-widest font-bold mt-1">Seguidores</span></div>
         <div><span class="block text-3xl font-black text-gray-900 dark:text-white">{{ followingCount }}</span><span class="text-[11px] text-gray-500 uppercase tracking-widest font-bold mt-1">Seguindo</span></div>
-        <div><span class="block text-3xl font-black text-gray-900 dark:text-white">{{ posts.length }}</span><span class="text-[11px] text-gray-500 uppercase tracking-widest font-bold mt-1">Publicacoes</span></div>
+        <div><span class="block text-3xl font-black text-gray-900 dark:text-white">{{ totalPosts }}</span><span class="text-[11px] text-gray-500 uppercase tracking-widest font-bold mt-1">Publicacoes</span></div>
       </aside>
     </div>
 
@@ -133,6 +133,10 @@
             <span>{{ post.comments_count }} comentarios</span>
           </div>
         </article>
+      </div>
+
+      <div *ngIf="isLoadingMore" class="py-5 text-center text-sm text-gray-500 dark:text-slate-300">
+        A carregar mais publicacoes...
       </div>
     </section>
   </section>

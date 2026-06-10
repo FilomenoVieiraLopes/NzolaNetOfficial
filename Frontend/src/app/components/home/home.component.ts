@@ -1,7 +1,8 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { forkJoin, Subscription } from 'rxjs';
 import { Comment } from '../../models/comment.model';
 import { Notification } from '../../models/notification.model';
 import { Post } from '../../models/post.model';
@@ -9,6 +10,7 @@ import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 import { NotificationService } from '../../services/notification.service';
+import { RealtimeService } from '../../services/realtime.service';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -22,11 +24,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private userService = inject(UserService);
   private notificationService = inject(NotificationService);
+  private realtimeService = inject(RealtimeService);
   private router = inject(Router);
 
   posts: Post[] = [];
   isLoading = true;
   feedMode: 'general' | 'following' = 'general';
+  currentPage = 1;
+  lastPage = 1;
+  isLoadingMore = false;
   currentUser = this.authService.getCurrentUser();
   homeSearchQuery = '';
   searchResults: User[] = [];
@@ -48,38 +54,47 @@ export class HomeComponent implements OnInit, OnDestroy {
   targetPostId: number | null = null;
   openMenuPostId: number | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  private notificationTimer: ReturnType<typeof setInterval> | null = null;
-  private feedTimer: ReturnType<typeof setInterval> | null = null;
-  private commentsTimer: ReturnType<typeof setInterval> | null = null;
+  private realtimeSubscriptions: Subscription[] = [];
 
   ngOnInit(): void {
     this.targetPostId = history.state?.postId ? Number(history.state.postId) : null;
     this.loadFeed('general');
     this.loadNotifications();
     this.loadSuggestions();
-    this.notificationTimer = setInterval(() => this.loadNotifications(false), 10000);
-    this.feedTimer = setInterval(() => this.refreshFeed(), 12000);
-    this.commentsTimer = setInterval(() => this.refreshOpenComments(), 8000);
+    this.connectRealtime();
   }
 
   ngOnDestroy(): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
-    if (this.notificationTimer) clearInterval(this.notificationTimer);
-    if (this.feedTimer) clearInterval(this.feedTimer);
-    if (this.commentsTimer) clearInterval(this.commentsTimer);
+    this.realtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.realtimeService.disconnect();
   }
 
-  loadFeed(mode: 'general' | 'following'): void {
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    const threshold = 700;
+    const position = window.innerHeight + window.scrollY;
+    const height = document.documentElement.scrollHeight;
+
+    if (position >= height - threshold) {
+      this.loadMorePosts();
+    }
+  }
+
+  loadFeed(mode: 'general' | 'following', page = 1): void {
     this.feedMode = mode;
+    this.currentPage = page;
     this.isLoading = true;
+    this.isLoadingMore = false;
 
     const request = mode === 'general'
-      ? this.feedService.getPosts()
-      : this.feedService.getFollowingFeed();
+      ? this.feedService.getPosts(page)
+      : this.feedService.getFollowingFeed(page);
 
     request.subscribe({
       next: (response) => {
         this.posts = this.mergePosts(response.data);
+        this.applyPagination(response.meta);
         this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
         this.isLoading = false;
         this.focusTargetPost();
@@ -87,6 +102,30 @@ export class HomeComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error fetching posts', error);
         this.isLoading = false;
+      }
+    });
+  }
+
+  loadMorePosts(): void {
+    if (this.isLoading || this.isLoadingMore || this.currentPage >= this.lastPage) return;
+
+    const nextPage = this.currentPage + 1;
+    this.isLoadingMore = true;
+
+    const request = this.feedMode === 'general'
+      ? this.feedService.getPosts(nextPage)
+      : this.feedService.getFollowingFeed(nextPage);
+
+    request.subscribe({
+      next: (response) => {
+        this.posts = this.mergePosts([...this.posts, ...response.data]);
+        this.applyPagination(response.meta);
+        this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
+        this.isLoadingMore = false;
+      },
+      error: (error) => {
+        console.error('Error loading more posts', error);
+        this.isLoadingMore = false;
       }
     });
   }
@@ -100,7 +139,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: () => {
         post.has_bazed = !post.has_bazed;
         post.bazes_count += post.has_bazed ? 1 : -1;
-        this.loadNotifications(false);
       },
       error: (error) => console.error('Error giving baze', error)
     });
@@ -180,7 +218,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         post.comments = [...(post.comments || []), response.data];
         post.comments_count += 1;
         this.commentDrafts[post.id] = '';
-        this.loadNotifications(false);
       },
       error: (error) => console.error('Error adding comment', error)
     });
@@ -412,15 +449,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private refreshFeed(): void {
-    if (this.isLoading || this.editingPostId) return;
+    if (this.isLoading || this.isLoadingMore || this.editingPostId) return;
 
-    const request = this.feedMode === 'general'
-      ? this.feedService.getPosts()
-      : this.feedService.getFollowingFeed();
+    const pages = Array.from({ length: this.currentPage }, (_, index) => index + 1);
+    const requests = pages.map((page) => this.feedMode === 'general'
+      ? this.feedService.getPosts(page)
+      : this.feedService.getFollowingFeed(page)
+    );
 
-    request.subscribe({
-      next: (response) => {
-        this.posts = this.mergePosts(response.data);
+    forkJoin(requests).subscribe({
+      next: (responses) => {
+        const latestResponse = responses[responses.length - 1];
+        this.posts = this.mergePosts(responses.flatMap((response) => response.data));
+        this.applyPagination(latestResponse?.meta);
         this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
       },
       error: (error) => console.error('Error refreshing feed', error)
@@ -438,6 +479,29 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
   }
 
+  private connectRealtime(): void {
+    this.realtimeService.connect(this.currentUser?.id);
+
+    this.realtimeSubscriptions.push(
+      this.realtimeService.notificationCreated$.subscribe((notification) => {
+        const alreadyExists = this.notifications.some((item) => item.id === notification.id);
+        this.notifications = [notification, ...this.notifications]
+          .filter((item, index, list) => list.findIndex((current) => current.id === item.id) === index)
+          .slice(0, 5);
+        if (!alreadyExists && !notification.read) {
+          this.unreadNotifications += 1;
+        }
+      })
+    );
+
+    this.realtimeSubscriptions.push(
+      this.realtimeService.feedUpdated$.subscribe(() => {
+        this.refreshFeed();
+        this.refreshOpenComments();
+      })
+    );
+  }
+
   private mergePosts(freshPosts: Post[]): Post[] {
     return freshPosts.map((freshPost) => {
       const currentPost = this.posts.find((post) => post.id === freshPost.id);
@@ -448,6 +512,15 @@ export class HomeComponent implements OnInit, OnDestroy {
         comments: currentPost.comments,
       };
     });
+  }
+
+  private applyPagination(meta = {
+    current_page: 1,
+    last_page: 1,
+    total: this.posts.length,
+  }): void {
+    this.currentPage = meta.current_page;
+    this.lastPage = meta.last_page;
   }
 
   private focusTargetPost(): void {

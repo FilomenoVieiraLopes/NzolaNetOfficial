@@ -9,6 +9,12 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 interface LaravelPaginator<T> {
   data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number | null;
+  to: number | null;
 }
 
 interface PostCreateResponse {
@@ -32,24 +38,34 @@ interface CommentUpdateResponse {
 export class FeedService {
   private http = inject(HttpClient);
 
-  getPosts(): Observable<ApiResponse<Post[]>> {
-    return this.loadPosts('/posts');
+  getPosts(page = 1): Observable<ApiResponse<Post[]>> {
+    return this.loadPosts('/posts', page);
   }
 
-  getFollowingFeed(): Observable<ApiResponse<Post[]>> {
-    return this.loadPosts('/posts/feed');
+  getFollowingFeed(page = 1): Observable<ApiResponse<Post[]>> {
+    return this.loadPosts('/posts/feed', page);
   }
 
-  getUserPosts(userId: number | string): Observable<ApiResponse<Post[]>> {
-    return this.loadPosts(`/users/${userId}/posts`);
+  getUserPosts(userId: number | string, page = 1): Observable<ApiResponse<Post[]>> {
+    return this.loadPosts(`/users/${userId}/posts`, page);
   }
 
-  private loadPosts(path: string): Observable<ApiResponse<Post[]>> {
-    return this.http.get<LaravelPaginator<Post>>(`${API_BASE_URL}${path}`).pipe(
+  private loadPosts(path: string, page: number): Observable<ApiResponse<Post[]>> {
+    return this.http.get<LaravelPaginator<Post>>(`${API_BASE_URL}${path}`, {
+      params: { page }
+    }).pipe(
       map((response) => ({
         status: 'success' as const,
         data: response.data,
-        message: 'Publicacoes carregadas.'
+        message: 'Publicacoes carregadas.',
+        meta: {
+          current_page: response.current_page,
+          last_page: response.last_page,
+          per_page: response.per_page,
+          total: response.total,
+          from: response.from,
+          to: response.to,
+        }
       }))
     );
   }

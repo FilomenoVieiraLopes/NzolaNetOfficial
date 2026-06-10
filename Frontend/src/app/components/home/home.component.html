@@ -85,7 +85,6 @@
                 </div>
               </div>
             </div>
-            <!-- Aqui em baixo estava o Utilizador #{{ post.user_id }} -->
             <p class="text-label-sm text-on-secondary-container"></p>
           </div>
         </div>
@@ -198,6 +197,10 @@
           </div>
         </section>
       </article>
+
+      <div *ngIf="isLoadingMore" class="py-4 text-center text-sm text-on-surface-variant dark:text-slate-300">
+        A carregar mais publicacoes...
+      </div>
     </div>
   </main>
 

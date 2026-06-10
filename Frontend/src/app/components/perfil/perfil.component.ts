@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { Post } from '../../models/post.model';
@@ -24,6 +24,10 @@ export class PerfilComponent implements OnInit {
   currentUser = this.authService.getCurrentUser();
   user: User | null = null;
   posts: Post[] = [];
+  currentPage = 1;
+  lastPage = 1;
+  totalPosts = 0;
+  isLoadingMore = false;
   followersCount = 0;
   followingCount = 0;
   isLoading = true;
@@ -54,6 +58,10 @@ export class PerfilComponent implements OnInit {
     this.error = '';
     this.user = null;
     this.posts = [];
+    this.currentPage = 1;
+    this.lastPage = 1;
+    this.totalPosts = 0;
+    this.isLoadingMore = false;
     this.followersCount = 0;
     this.followingCount = 0;
     this.isOwnProfile = Number(this.currentUser?.id) === Number(userId);
@@ -107,15 +115,50 @@ export class PerfilComponent implements OnInit {
     });
   }
 
-  private loadPosts(userId: number): void {
-    this.feedService.getUserPosts(userId).subscribe({
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    const threshold = 700;
+    const position = window.innerHeight + window.scrollY;
+    const height = document.documentElement.scrollHeight;
+
+    if (position >= height - threshold) {
+      this.loadMorePosts();
+    }
+  }
+
+  loadPosts(userId: number, page = 1): void {
+    this.currentPage = page;
+    this.isLoadingMore = false;
+    this.feedService.getUserPosts(userId, page).subscribe({
       next: (response) => {
         this.posts = response.data;
+        this.applyPagination(response.meta);
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading profile posts', error);
         this.isLoading = false;
+      }
+    });
+  }
+
+  loadMorePosts(): void {
+    if (!this.user || this.isLoading || this.isLoadingMore || this.currentPage >= this.lastPage) return;
+
+    const nextPage = this.currentPage + 1;
+    this.isLoadingMore = true;
+
+    this.feedService.getUserPosts(this.user.id, nextPage).subscribe({
+      next: (response) => {
+        const existingIds = new Set(this.posts.map((post) => post.id));
+        const newPosts = response.data.filter((post) => !existingIds.has(post.id));
+        this.posts = [...this.posts, ...newPosts];
+        this.applyPagination(response.meta);
+        this.isLoadingMore = false;
+      },
+      error: (error) => {
+        console.error('Error loading more profile posts', error);
+        this.isLoadingMore = false;
       }
     });
   }
@@ -178,7 +221,7 @@ export class PerfilComponent implements OnInit {
         this.isFollowing = this.followStatus === 'accepted';
         if (this.isFollowing) {
           this.followersCount += 1;
-          this.loadPosts(this.user!.id);
+          this.loadPosts(this.user!.id, 1);
         }
         this.isFollowLoading = false;
       },
@@ -241,5 +284,15 @@ export class PerfilComponent implements OnInit {
 
   private isAdmin(): boolean {
     return String(this.currentUser?.role || '').toLowerCase() === 'admin';
+  }
+
+  private applyPagination(meta = {
+    current_page: 1,
+    last_page: 1,
+    total: this.posts.length,
+  }): void {
+    this.currentPage = meta.current_page;
+    this.lastPage = meta.last_page;
+    this.totalPosts = meta.total;
   }
 }

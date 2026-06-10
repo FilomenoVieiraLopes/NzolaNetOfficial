@@ -1,8 +1,11 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Notification } from '../../models/notification.model';
+import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { RealtimeService } from '../../services/realtime.service';
 
 @Component({
   selector: 'app-notificacao',
@@ -11,20 +14,27 @@ import { NotificationService } from '../../services/notification.service';
   styleUrl: './notificacao.component.css'
 })
 export class NotificacaoComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private realtimeService = inject(RealtimeService);
   private router = inject(Router);
 
   notifications: Notification[] = [];
   isLoading = true;
-  private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private realtimeSubscription: Subscription | null = null;
 
   ngOnInit(): void {
     this.loadNotifications();
-    this.refreshTimer = setInterval(() => this.loadNotifications(false), 10000);
+    this.realtimeService.connect(this.authService.getCurrentUser()?.id);
+    this.realtimeSubscription = this.realtimeService.notificationCreated$.subscribe((notification) => {
+      this.notifications = [notification, ...this.notifications]
+        .filter((item, index, list) => list.findIndex((current) => current.id === item.id) === index);
+    });
   }
 
   ngOnDestroy(): void {
-    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    this.realtimeSubscription?.unsubscribe();
+    this.realtimeService.disconnect();
   }
 
   loadNotifications(showLoading = true): void {
