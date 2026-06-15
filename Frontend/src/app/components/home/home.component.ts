@@ -7,6 +7,7 @@ import { Comment } from '../../models/comment.model';
 import { Notification } from '../../models/notification.model';
 import { Post } from '../../models/post.model';
 import { User } from '../../models/user.model';
+import { notificationText } from '../../helpers/notification-text';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 import { NotificationService } from '../../services/notification.service';
@@ -90,11 +91,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.isLoadingMore = false;
 
-    const request = mode === 'general'
-      ? this.feedService.getPosts(page)
-      : this.feedService.getFollowingFeed(page);
-
-    request.subscribe({
+    this.getFeedPosts(page).subscribe({
       next: (response) => {
         this.posts = this.mergePosts(response.data);
         this.applyPagination(response.meta);
@@ -115,11 +112,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     const nextPage = this.currentPage + 1;
     this.isLoadingMore = true;
 
-    const request = this.feedMode === 'general'
-      ? this.feedService.getPosts(nextPage)
-      : this.feedService.getFollowingFeed(nextPage);
-
-    request.subscribe({
+    this.getFeedPosts(nextPage).subscribe({
       next: (response) => {
         this.posts = this.mergePosts([...this.posts, ...response.data]);
         this.applyPagination(response.meta);
@@ -236,8 +229,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.feedService.addComment(post.id, body).subscribe({
       next: (response) => {
-        post.comments = [...(post.comments || []), response.data];
-        post.comments_count += 1;
+        this.addCommentToPost(post, response.data);
         this.commentDrafts[post.id] = '';
         this.toast.success('Comentario publicado com sucesso.');
       },
@@ -269,8 +261,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.feedService.addComment(post.id, body, comment.id).subscribe({
       next: (response) => {
-        post.comments = [...(post.comments || []), response.data];
-        post.comments_count += 1;
+        this.addCommentToPost(post, response.data);
         this.replyDrafts[comment.id] = '';
         this.replyingToCommentId = null;
         this.toast.success('Resposta publicada com sucesso.');
@@ -331,9 +322,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       this.feedService.deleteComment(comment.id).subscribe({
         next: () => {
-          const removedCount = (post.comments || []).filter((item) => item.id === comment.id || item.parent_id === comment.id).length;
-          post.comments = (post.comments || []).filter((item) => item.id !== comment.id && item.parent_id !== comment.id);
-          post.comments_count = Math.max(0, post.comments_count - removedCount);
+          this.removeCommentFromPost(post, comment);
           this.toast.success('Comentario eliminado com sucesso.');
         },
         error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar o comentario.'))
@@ -385,19 +374,22 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   followUser(user: User): void {
-    this.userService.follow(user.id).subscribe({
-      next: (response) => {
-        this.searchResults = this.searchResults.filter((item) => item.id !== user.id);
-        this.toast.success(response.status === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.'))
-    });
+    this.followAndRemoveFromList(user, 'search');
   }
 
   followSuggestedUser(user: User): void {
+    this.followAndRemoveFromList(user, 'suggestions');
+  }
+
+  private followAndRemoveFromList(user: User, list: 'search' | 'suggestions'): void {
     this.userService.follow(user.id).subscribe({
       next: (response) => {
-        this.suggestedUsers = this.suggestedUsers.filter((item) => item.id !== user.id);
+        if (list === 'search') {
+          this.searchResults = this.searchResults.filter((item) => item.id !== user.id);
+        } else {
+          this.suggestedUsers = this.suggestedUsers.filter((item) => item.id !== user.id);
+        }
+
         this.toast.success(response.status === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
       },
       error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.'))
@@ -465,25 +457,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   acceptFollowRequestFromNotification(notification: Notification, event: Event): void {
-    event.stopPropagation();
-
-    if (!notification.actor_id) {
-      this.toast.error('Nao foi possivel identificar quem fez o pedido.');
-      return;
-    }
-
-    this.userService.acceptFollowRequest(notification.actor_id).subscribe({
-      next: () => {
-        notification.read = true;
-        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
-        this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
-        this.toast.success('Pedido aceite com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'))
-    });
+    this.answerFollowRequest(notification, event, 'accept');
   }
 
   rejectFollowRequestFromNotification(notification: Notification, event: Event): void {
+    this.answerFollowRequest(notification, event, 'reject');
+  }
+
+  private answerFollowRequest(notification: Notification, event: Event, action: 'accept' | 'reject'): void {
     event.stopPropagation();
 
     if (!notification.actor_id) {
@@ -491,29 +472,29 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.userService.rejectFollowRequest(notification.actor_id).subscribe({
+    const request = action === 'accept'
+      ? this.userService.acceptFollowRequest(notification.actor_id)
+      : this.userService.rejectFollowRequest(notification.actor_id);
+
+    request.subscribe({
       next: () => {
         notification.read = true;
         this.notifications = this.notifications.filter((item) => item.id !== notification.id);
         this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
-        this.toast.success('Pedido rejeitado.');
+        this.toast.success(action === 'accept' ? 'Pedido aceite com sucesso.' : 'Pedido rejeitado.');
       },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'))
+      error: (error) => {
+        const fallback = action === 'accept'
+          ? 'Nao foi possivel aceitar o pedido.'
+          : 'Nao foi possivel rejeitar o pedido.';
+
+        this.toast.error(this.toast.errorMessage(error, fallback));
+      }
     });
   }
 
   labelForNotification(type: string): string {
-    const labels: Record<string, string> = {
-      comment: 'comentou na sua publicacao',
-      baze: 'deu baze na sua publicacao',
-      comment_baze: 'deu baze no seu comentario',
-      comment_reply: 'respondeu ao seu comentario',
-      follow: 'comecou a seguir voce',
-      follow_request: 'pediu para seguir voce',
-      follow_accepted: 'aceitou o seu pedido para seguir'
-    };
-
-    return labels[type] ?? `nova notificacao: ${type}`;
+    return notificationText(type);
   }
 
   private searchUsers(term: string): void {
@@ -552,6 +533,25 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private isAdmin(): boolean {
     return String(this.currentUser?.role || '').toLowerCase() === 'admin';
+  }
+
+  private getFeedPosts(page: number) {
+    return this.feedMode === 'general'
+      ? this.feedService.getPosts(page)
+      : this.feedService.getFollowingFeed(page);
+  }
+
+  private addCommentToPost(post: Post, comment: Comment): void {
+    post.comments = [...(post.comments || []), comment];
+    post.comments_count += 1;
+  }
+
+  private removeCommentFromPost(post: Post, comment: Comment): void {
+    const comments = post.comments || [];
+    const removedCount = comments.filter((item) => item.id === comment.id || item.parent_id === comment.id).length;
+
+    post.comments = comments.filter((item) => item.id !== comment.id && item.parent_id !== comment.id);
+    post.comments_count = Math.max(0, post.comments_count - removedCount);
   }
 
   private loadComments(post: Post): void {

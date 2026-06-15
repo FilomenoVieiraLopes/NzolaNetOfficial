@@ -62,29 +62,37 @@ export class RegistrarComponent {
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
+    const file = input.files?.[0];
+    if (!file) return;
 
-      if (file.size > 2 * 1024 * 1024) {
-        this.toast.warning('Imagem muito grande. Maximo 2MB.');
-        return;
-      }
-
-      if (!file.type.startsWith('image/')) {
-        this.toast.warning('Por favor, selecione um ficheiro de imagem.');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        this.profileImage = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+    if (!this.validProfileImage(file)) {
+      input.value = '';
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      this.profileImage = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   }
 
   triggerFileInput(): void {
     const fileInput = document.getElementById('photoUpload') as HTMLInputElement;
     fileInput?.click();
+  }
+
+  private validProfileImage(file: File): boolean {
+    if (file.size > 2 * 1024 * 1024) {
+      this.toast.warning('Imagem muito grande. Maximo 2MB.');
+      return false;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.toast.warning('Por favor, selecione um ficheiro de imagem.');
+      return false;
+    }
+
+    return true;
   }
 }

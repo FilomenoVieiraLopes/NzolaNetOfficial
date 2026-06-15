@@ -63,12 +63,13 @@ export class ComentarioComponent implements OnInit {
     if (!this.commentText.trim() || !this.post) return;
     
     this.feedService.addComment(this.post.id, this.commentText).subscribe({
-      next: () => {
+      next: (response) => {
+        if (!this.post) return;
+
+        this.post.comments = [...(this.post.comments || []), response.data];
+        this.post.comments_count += 1;
         this.commentText = '';
         this.toast.success('Comentario publicado com sucesso.');
-        this.feedService.getPost(this.post!.id).subscribe({
-          next: (res) => this.post = res.data
-        });
       },
       error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar o comentario.'))
     });

@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { notificationText } from '../../helpers/notification-text';
 import { Notification } from '../../models/notification.model';
 import { NotificationService } from '../../services/notification.service';
 import { ToastService } from '../../services/toast.service';
@@ -93,23 +94,14 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
   }
 
   acceptFollowRequest(notification: Notification, event: Event): void {
-    event.stopPropagation();
-
-    if (!notification.actor_id) {
-      this.toast.error('Nao foi possivel identificar quem fez o pedido.');
-      return;
-    }
-
-    this.userService.acceptFollowRequest(notification.actor_id).subscribe({
-      next: () => {
-        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
-        this.toast.success('Pedido aceite com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'))
-    });
+    this.answerFollowRequest(notification, event, 'accept');
   }
 
   rejectFollowRequest(notification: Notification, event: Event): void {
+    this.answerFollowRequest(notification, event, 'reject');
+  }
+
+  private answerFollowRequest(notification: Notification, event: Event, action: 'accept' | 'reject'): void {
     event.stopPropagation();
 
     if (!notification.actor_id) {
@@ -117,26 +109,26 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.userService.rejectFollowRequest(notification.actor_id).subscribe({
+    const request = action === 'accept'
+      ? this.userService.acceptFollowRequest(notification.actor_id)
+      : this.userService.rejectFollowRequest(notification.actor_id);
+
+    request.subscribe({
       next: () => {
         this.notifications = this.notifications.filter((item) => item.id !== notification.id);
-        this.toast.success('Pedido rejeitado.');
+        this.toast.success(action === 'accept' ? 'Pedido aceite com sucesso.' : 'Pedido rejeitado.');
       },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'))
+      error: (error) => {
+        const fallback = action === 'accept'
+          ? 'Nao foi possivel aceitar o pedido.'
+          : 'Nao foi possivel rejeitar o pedido.';
+
+        this.toast.error(this.toast.errorMessage(error, fallback));
+      }
     });
   }
 
   labelFor(type: string): string {
-    const labels: Record<string, string> = {
-      comment: 'comentou na sua publicacao',
-      baze: 'deu baze na sua publicacao',
-      comment_baze: 'deu baze no seu comentario',
-      comment_reply: 'respondeu ao seu comentario',
-      follow: 'comecou a seguir voce',
-      follow_request: 'pediu para seguir voce',
-      follow_accepted: 'aceitou o seu pedido para seguir'
-    };
-
-    return labels[type] ?? `nova notificacao: ${type}`;
+    return notificationText(type);
   }
 }

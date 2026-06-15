@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
@@ -45,25 +46,9 @@ export class EditarPerfilComponent implements OnInit {
 
   onAvatarSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const file = this.validImageFile(input, 'A foto');
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      this.error = 'A foto deve ser JPG, PNG, WEBP ou GIF.';
-      this.toast.warning(this.error);
-      input.value = '';
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      this.error = 'A foto deve ter no maximo 5MB.';
-      this.toast.warning(this.error);
-      input.value = '';
-      return;
-    }
-
-    this.error = '';
     this.avatarFile = file;
     const reader = new FileReader();
     reader.onload = () => this.avatarPreview = reader.result as string;
@@ -72,32 +57,16 @@ export class EditarPerfilComponent implements OnInit {
 
   onCoverSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const file = this.validImageFile(input, 'A imagem de capa');
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      this.error = 'A imagem de capa deve ser JPG, PNG, WEBP ou GIF.';
-      this.toast.warning(this.error);
-      input.value = '';
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      this.error = 'A imagem de capa deve ter no maximo 5MB.';
-      this.toast.warning(this.error);
-      input.value = '';
-      return;
-    }
-
-    this.error = '';
     this.coverFile = file;
     const reader = new FileReader();
     reader.onload = () => this.coverPreview = reader.result as string;
     reader.readAsDataURL(file);
   }
 
-  save(): void {
+  async save(): Promise<void> {
     if (!this.user || !this.name.trim()) {
       this.toast.warning('O nome do perfil e obrigatorio.');
       return;
@@ -105,71 +74,38 @@ export class EditarPerfilComponent implements OnInit {
 
     this.isSaving = true;
     this.error = '';
-    this.userService.updateUser(this.user.id, {
-      name: this.name.trim(),
-      bio: this.bio.trim() || null,
-      privacy: this.privacy
-    }).subscribe({
-      next: (response) => {
-        // Se houver avatar, envia primeiro a foto e depois a capa, se existir.
-        if (this.avatarFile) {
-          this.userService.updateAvatar(response.user.id, this.avatarFile).subscribe({
-            next: (avatarResponse) => {
-              const userAfterAvatar = avatarResponse.user || {
-                ...response.user,
-                avatar_url: avatarResponse.avatar_url
-              };
 
-              if (this.coverFile) {
-                this.userService.updateCover(response.user.id, this.coverFile).subscribe({
-                  next: (coverResponse) => this.finishSave(coverResponse.user || {
-                    ...userAfterAvatar,
-                    cover_url: coverResponse.cover_url
-                  }),
-                  error: (error) => {
-                    this.error = this.validationMessage(error);
-                    this.toast.error(this.error);
-                    this.isSaving = false;
-                  }
-                });
-                return;
-              }
+    try {
+      const profileResponse = await firstValueFrom(this.userService.updateUser(this.user.id, {
+        name: this.name.trim(),
+        bio: this.bio.trim() || null,
+        privacy: this.privacy
+      }));
 
-              this.finishSave(userAfterAvatar);
-            },
-            error: (error) => {
-              this.error = this.validationMessage(error);
-              this.toast.error(this.error);
-              this.isSaving = false;
-            }
-          });
-          return;
-        }
+      let savedUser = profileResponse.user;
 
-        // Se apenas houver capa, envia so a imagem de capa.
-        if (this.coverFile) {
-          this.userService.updateCover(response.user.id, this.coverFile).subscribe({
-            next: (coverResponse) => this.finishSave(coverResponse.user || {
-              ...response.user,
-              cover_url: coverResponse.cover_url
-            }),
-            error: (error) => {
-              this.error = this.validationMessage(error);
-              this.toast.error(this.error);
-              this.isSaving = false;
-            }
-          });
-          return;
-        }
-
-        this.finishSave(response.user);
-      },
-      error: (error) => {
-        this.error = this.validationMessage(error);
-        this.toast.error(this.error);
-        this.isSaving = false;
+      if (this.avatarFile) {
+        const avatarResponse = await firstValueFrom(this.userService.updateAvatar(savedUser.id, this.avatarFile));
+        savedUser = avatarResponse.user || {
+          ...savedUser,
+          avatar_url: avatarResponse.avatar_url
+        };
       }
-    });
+
+      if (this.coverFile) {
+        const coverResponse = await firstValueFrom(this.userService.updateCover(savedUser.id, this.coverFile));
+        savedUser = coverResponse.user || {
+          ...savedUser,
+          cover_url: coverResponse.cover_url
+        };
+      }
+
+      this.finishSave(savedUser);
+    } catch (error) {
+      this.error = this.validationMessage(error);
+      this.toast.error(this.error);
+      this.isSaving = false;
+    }
   }
 
   private fillForm(user: User): void {
@@ -186,6 +122,29 @@ export class EditarPerfilComponent implements OnInit {
     this.isSaving = false;
     this.toast.success('Perfil guardado com sucesso.');
     this.router.navigate(['/app/perfil']);
+  }
+
+  private validImageFile(input: HTMLInputElement, fieldName: string): File | null {
+    const file = input.files?.[0];
+    if (!file) return null;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      this.error = `${fieldName} deve ser JPG, PNG, WEBP ou GIF.`;
+      this.toast.warning(this.error);
+      input.value = '';
+      return null;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.error = `${fieldName} deve ter no maximo 5MB.`;
+      this.toast.warning(this.error);
+      input.value = '';
+      return null;
+    }
+
+    this.error = '';
+    return file;
   }
 
   private validationMessage(error: unknown): string {

@@ -61,16 +61,10 @@ export class CriarPostComponent {
     if (!file) return;
 
     this.selectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
-    const maxSize = this.selectedMediaType === 'video'
-      ? 50 * 1024 * 1024
-      : 5 * 1024 * 1024;
 
-    if (file.size > maxSize) {
-      this.toast.warning(this.selectedMediaType === 'video'
-        ? 'O video deve ter no maximo 50MB.'
-        : 'A imagem deve ter no maximo 5MB.');
+    if (!this.fileIsValid(file)) {
       input.value = '';
-      this.selectedMediaType = null;
+      this.clearSelectedMedia();
       return;
     }
 
@@ -82,9 +76,33 @@ export class CriarPostComponent {
   }
 
   removeImage(): void {
+    this.clearSelectedMedia();
+  }
+
+  private clearSelectedMedia(): void {
     this.selectedImage = null;
     this.selectedMediaType = null;
     this.selectedFile = null;
+  }
+
+  private fileIsValid(file: File): boolean {
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+      this.toast.warning('Escolha uma imagem ou um video.');
+      return false;
+    }
+
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.toast.warning(isVideo
+        ? 'O video deve ter no maximo 50MB.'
+        : 'A imagem deve ter no maximo 5MB.');
+      return false;
+    }
+
+    return true;
   }
 
   toggleEmojiPicker(): void {
