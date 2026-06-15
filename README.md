@@ -1,10 +1,10 @@
 # NzolaNet
 
-NzolaNet e uma aplicacao web de rede social feita para o projecto de Aplicacoes Web. O sistema permite gerir utilizadores, publicacoes, bazes, comentarios, seguidores, feed de noticias, perfis publicos/privados e notificacoes em tempo real.
+NzolaNet e uma aplicacao web de rede social feita para o projecto de Aplicacoes Web. O sistema permite gerir utilizadores, publicacoes, bazes, comentarios, seguidores, feed de noticias, perfis publicos/privados e notificacoes com actualizacao por polling.
 
 Este repositorio esta organizado como monorepo:
 
-- [backend/](backend/) - API Laravel, regras de negocio, banco de dados, autenticacao, notificacoes e WebSockets.
+- [backend/](backend/) - API Laravel, regras de negocio, banco de dados, autenticacao e notificacoes.
 - [Frontend/](Frontend/) - aplicacao Angular que consome a API.
 
 ## Estado actual
@@ -29,7 +29,7 @@ Funcionalidades ja implementadas:
 - Sugestoes de perfis no home.
 - Notificacoes para baze, comentario e novo seguidor.
 - Apagar notificacoes.
-- Actualizacao dinamica com Laravel Reverb/WebSockets.
+- Actualizacao dinamica com polling no frontend.
 - Feedback visual com sistema de toast no frontend.
 - Testes automatizados dos principais endpoints do backend.
 
@@ -40,7 +40,6 @@ Backend:
 - PHP 8.3+
 - Composer
 - MySQL
-- Laravel Reverb
 - Node.js e npm, usados pelo Vite/scripts do Laravel
 
 Frontend:
@@ -64,7 +63,7 @@ php artisan db:seed
 php artisan storage:link
 ```
 
-2. Subir backend, queue e Reverb:
+2. Subir backend:
 
 ```bash
 composer run dev
@@ -74,8 +73,6 @@ Se preferir controlar cada processo separadamente:
 
 ```bash
 php artisan serve
-php artisan reverb:start --debug
-php artisan queue:listen --tries=1 --timeout=0
 ```
 
 3. Preparar e executar o frontend:
@@ -90,7 +87,6 @@ URLs principais:
 
 - Frontend: `http://localhost:4200`
 - API: `http://127.0.0.1:8000/api`
-- Reverb: `ws://127.0.0.1:8080`
 
 ## Documentacao
 

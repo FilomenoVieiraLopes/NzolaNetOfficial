@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Follow;
+use App\Models\Notification;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
@@ -78,6 +79,14 @@ class ProfileApiTest extends ApiTestCase
             ->assertOk()
             ->assertJsonPath('status', 'pending');
 
+        Notification::create([
+            'user_id' => $owner->id,
+            'actor_id' => $follower->id,
+            'type' => 'follow_request',
+            'related_id' => $follower->id,
+            'read' => false,
+        ]);
+
         $this->getJson("/api/users/{$owner->id}")
             ->assertOk()
             ->assertJsonPath('id', $owner->id)
@@ -88,6 +97,12 @@ class ProfileApiTest extends ApiTestCase
 
         $this->putJson("/api/users/follow-requests/{$follower->id}/accept")
             ->assertOk();
+
+        $this->assertDatabaseMissing('notifications', [
+            'user_id' => $owner->id,
+            'actor_id' => $follower->id,
+            'type' => 'follow_request',
+        ]);
 
         Sanctum::actingAs($follower);
 
@@ -100,6 +115,55 @@ class ProfileApiTest extends ApiTestCase
 
         $this->getJson("/api/users/{$owner->id}")
             ->assertOk();
+    }
+
+    public function test_follow_request_notification_is_not_duplicated(): void
+    {
+        $owner = User::factory()->create(['privacy' => 'private']);
+        $follower = User::factory()->create();
+
+        Sanctum::actingAs($follower);
+
+        $this->postJson("/api/users/{$owner->id}/follow")
+            ->assertOk();
+
+        $this->postJson("/api/users/{$owner->id}/follow")
+            ->assertUnprocessable();
+
+        $this->assertDatabaseCount('notifications', 1);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $owner->id,
+            'actor_id' => $follower->id,
+            'type' => 'follow_request',
+            'related_id' => $follower->id,
+        ]);
+    }
+
+    public function test_duplicate_follow_request_notifications_are_returned_once(): void
+    {
+        $owner = User::factory()->create(['privacy' => 'private']);
+        $follower = User::factory()->create();
+
+        Notification::create([
+            'user_id' => $owner->id,
+            'actor_id' => $follower->id,
+            'type' => 'follow_request',
+            'related_id' => $follower->id,
+            'read' => false,
+        ]);
+        Notification::create([
+            'user_id' => $owner->id,
+            'actor_id' => $follower->id,
+            'type' => 'follow_request',
+            'related_id' => $follower->id,
+            'read' => false,
+        ]);
+
+        Sanctum::actingAs($owner);
+
+        $this->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonCount(1);
     }
 
     public function test_following_feed_only_includes_accepted_followed_users(): void

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\DTOs\Comment\CommentResponseDTO;
 use App\DTOs\Comment\CreateCommentDTO;
 use App\DTOs\Comment\UpdateCommentDTO;
-use App\Events\FeedUpdated;
 use App\Interfaces\Repositories\ICommentRepository;
 use App\Interfaces\Repositories\INotificationRepository;
 use App\Interfaces\Repositories\IPostRepository;
@@ -44,7 +43,6 @@ class CommentService implements ICommentService
         }
 
         $comment = $this->commentRepository->create($dto);
-        event(new FeedUpdated('comment.created', (int) $dto->post_id, (int) $dto->user_id));
 
         // Notifica o autor do post quando outra pessoa comenta.
         if ((int) $post->user_id !== (int) $dto->user_id) {
@@ -74,7 +72,6 @@ class CommentService implements ICommentService
         }
 
         $updated = $this->commentRepository->update($id, $dto);
-        event(new FeedUpdated('comment.updated', (int) $updated->post_id, (int) $userId));
 
         return CommentResponseDTO::fromModel($updated, (int) $userId);
     }
@@ -93,6 +90,5 @@ class CommentService implements ICommentService
         }
 
         $this->commentRepository->delete($id);
-        event(new FeedUpdated('comment.deleted', (int) $comment->post_id, (int) $userId));
     }
 }

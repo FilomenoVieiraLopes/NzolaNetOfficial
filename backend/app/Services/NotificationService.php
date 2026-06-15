@@ -18,7 +18,13 @@ class NotificationService implements INotificationService
         // A API nunca retorna notificacoes de outros utilizadores.
         $notifications = $this->notificationRepository->getByUser($userId);
 
-        return $notifications->map(function ($notification) {
+        return $notifications->unique(function ($notification) {
+            if ($notification->type === 'follow_request') {
+                return "{$notification->type}:{$notification->actor_id}:{$notification->related_id}";
+            }
+
+            return "notification:{$notification->id}";
+        })->map(function ($notification) {
             return NotificationResponseDTO::fromModel($notification)->toArray();
         })->toArray();
     }

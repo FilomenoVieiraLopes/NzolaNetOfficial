@@ -120,12 +120,21 @@ class UserService implements IUserService
         $this->followRepository->create($followerId, $followingId, $status);
 
         // Notifica o perfil seguido sobre o novo seguidor ou pedido.
-        $this->notificationRepository->create(
-            $followingId,
-            $status === 'pending' ? 'follow_request' : 'follow',
-            $followerId,
-            $followerId
-        );
+        if ($status === 'pending') {
+            $this->notificationRepository->createIfNotExists(
+                $followingId,
+                'follow_request',
+                $followerId,
+                $followerId
+            );
+        } else {
+            $this->notificationRepository->create(
+                $followingId,
+                'follow',
+                $followerId,
+                $followerId
+            );
+        }
 
         return $status;
     }
@@ -166,6 +175,7 @@ class UserService implements IUserService
         }
 
         $this->followRepository->accept($followerId, $ownerId);
+        $this->notificationRepository->deleteByTypeAndActor($ownerId, 'follow_request', $followerId);
 
         $this->notificationRepository->create(
             $followerId,
@@ -184,6 +194,7 @@ class UserService implements IUserService
         }
 
         $this->followRepository->delete($followerId, $ownerId);
+        $this->notificationRepository->deleteByTypeAndActor($ownerId, 'follow_request', $followerId);
     }
 
     public function getFollowers(string $userId, ?string $viewerId = null): array

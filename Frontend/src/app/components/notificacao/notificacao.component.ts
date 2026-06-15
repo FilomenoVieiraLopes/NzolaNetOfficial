@@ -1,11 +1,8 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { Notification } from '../../models/notification.model';
-import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
-import { RealtimeService } from '../../services/realtime.service';
 import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
@@ -16,29 +13,22 @@ import { UserService } from '../../services/user.service';
   styleUrl: './notificacao.component.css'
 })
 export class NotificacaoComponent implements OnInit, OnDestroy {
-  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
-  private realtimeService = inject(RealtimeService);
   private toast = inject(ToastService);
   private userService = inject(UserService);
   private router = inject(Router);
 
   notifications: Notification[] = [];
   isLoading = true;
-  private realtimeSubscription: Subscription | null = null;
+  private pollingTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     this.loadNotifications();
-    this.realtimeService.connect(this.authService.getCurrentUser()?.id);
-    this.realtimeSubscription = this.realtimeService.notificationCreated$.subscribe((notification) => {
-      this.notifications = [notification, ...this.notifications]
-        .filter((item, index, list) => list.findIndex((current) => current.id === item.id) === index);
-    });
+    this.pollingTimer = setInterval(() => this.loadNotifications(false), 10000);
   }
 
   ngOnDestroy(): void {
-    this.realtimeSubscription?.unsubscribe();
-    this.realtimeService.disconnect();
+    if (this.pollingTimer) clearInterval(this.pollingTimer);
   }
 
   loadNotifications(showLoading = true): void {

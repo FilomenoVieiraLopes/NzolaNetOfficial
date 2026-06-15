@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Events\NotificationCreated;
 use App\Interfaces\Repositories\INotificationRepository;
 use App\Models\Notification;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,9 +20,23 @@ class NotificationRepository implements INotificationRepository
             'read'       => false,
         ]);
 
-        event(new NotificationCreated($notification));
-
         return $notification;
+    }
+
+    public function createIfNotExists(string $userId, string $type, string $relatedId, ?string $actorId = null, ?string $postId = null): Notification
+    {
+        $notification = Notification::where('user_id', $userId)
+            ->where('type', $type)
+            ->where('related_id', $relatedId)
+            ->when($actorId !== null, fn($query) => $query->where('actor_id', $actorId))
+            ->when($postId !== null, fn($query) => $query->where('post_id', $postId))
+            ->first();
+
+        if ($notification) {
+            return $notification;
+        }
+
+        return $this->create($userId, $type, $relatedId, $actorId, $postId);
     }
 
     public function getByUser(string $userId): Collection
@@ -58,6 +71,14 @@ class NotificationRepository implements INotificationRepository
                     ->orWhereNull('read');
             })
             ->update(['read' => true]);
+    }
+
+    public function deleteByTypeAndActor(string $userId, string $type, string $actorId): int
+    {
+        return Notification::where('user_id', $userId)
+            ->where('type', $type)
+            ->where('actor_id', $actorId)
+            ->delete();
     }
 
     public function delete(string $id, string $userId): bool

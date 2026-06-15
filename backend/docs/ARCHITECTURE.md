@@ -410,7 +410,7 @@ Arquivos principais:
 ## Pontos para evoluir
 
 - Criar frontend Angular completo.
-- Adicionar refresh em tempo real do feed com polling ou WebSocket.
+- O refresh dinamico do feed e das notificacoes e feito por polling no frontend.
 - Criar endpoints especificos de administracao se o projeto crescer.
 - Adicionar pagina/relatorio do projeto.
 - Adicionar documentacao Swagger/OpenAPI se necessario.

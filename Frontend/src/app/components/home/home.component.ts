@@ -2,7 +2,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { forkJoin, Subscription } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { Comment } from '../../models/comment.model';
 import { Notification } from '../../models/notification.model';
 import { Post } from '../../models/post.model';
@@ -10,7 +10,6 @@ import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 import { NotificationService } from '../../services/notification.service';
-import { RealtimeService } from '../../services/realtime.service';
 import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
@@ -25,7 +24,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private userService = inject(UserService);
   private notificationService = inject(NotificationService);
-  private realtimeService = inject(RealtimeService);
   private toast = inject(ToastService);
   private router = inject(Router);
 
@@ -56,7 +54,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   targetPostId: number | null = null;
   openMenuPostId: number | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  private realtimeSubscriptions: Subscription[] = [];
+  private pollingTimer: ReturnType<typeof setInterval> | null = null;
   private pendingBazePostIds = new Set<number>();
   private pendingCommentBazeIds = new Set<number>();
 
@@ -65,13 +63,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadFeed('general');
     this.loadNotifications();
     this.loadSuggestions();
-    this.connectRealtime();
+    this.startPolling();
   }
 
   ngOnDestroy(): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.realtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
-    this.realtimeService.disconnect();
+    if (this.pollingTimer) clearInterval(this.pollingTimer);
   }
 
   @HostListener('window:scroll')
@@ -565,27 +562,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
   }
 
-  private connectRealtime(): void {
-    this.realtimeService.connect(this.currentUser?.id);
-
-    this.realtimeSubscriptions.push(
-      this.realtimeService.notificationCreated$.subscribe((notification) => {
-        const alreadyExists = this.notifications.some((item) => item.id === notification.id);
-        this.notifications = [notification, ...this.notifications]
-          .filter((item, index, list) => list.findIndex((current) => current.id === item.id) === index)
-          .slice(0, 5);
-        if (!alreadyExists && !notification.read) {
-          this.unreadNotifications += 1;
-        }
-      })
-    );
-
-    this.realtimeSubscriptions.push(
-      this.realtimeService.feedUpdated$.subscribe(() => {
-        this.refreshFeed();
-        this.refreshOpenComments();
-      })
-    );
+  private startPolling(): void {
+    this.pollingTimer = setInterval(() => {
+      this.loadNotifications(false);
+      this.refreshFeed();
+      this.refreshOpenComments();
+    }, 15000);
   }
 
   private mergePosts(freshPosts: Post[]): Post[] {

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\DTOs\Baze\BazeResponseDTO;
-use App\Events\FeedUpdated;
 use App\Interfaces\Repositories\IBazeRepository;
 use App\Interfaces\Repositories\ICommentRepository;
 use App\Interfaces\Repositories\INotificationRepository;
@@ -37,7 +36,6 @@ class BazeService implements IBazeService
         }
 
         $baze = $this->bazeRepository->create($postId, $userId);
-        event(new FeedUpdated('baze.created', (int) $postId, (int) $userId));
 
         // Notifica o autor quando outra pessoa reage a publicacao.
         if ((int) $post->user_id !== (int) $userId) {
@@ -63,7 +61,6 @@ class BazeService implements IBazeService
         }
 
         $this->bazeRepository->delete($postId, $userId);
-        event(new FeedUpdated('baze.deleted', (int) $postId, (int) $userId));
     }
 
     public function count(string $postId): int
@@ -87,7 +84,6 @@ class BazeService implements IBazeService
         }
 
         $baze = $this->bazeRepository->createForComment($commentId, $userId);
-        event(new FeedUpdated('comment_baze.created', (int) $comment->post_id, (int) $userId));
 
         // Notifica o autor do comentario quando outra pessoa reage ao comentario.
         if ((int) $comment->user_id !== (int) $userId) {
@@ -123,6 +119,5 @@ class BazeService implements IBazeService
         }
 
         $this->bazeRepository->deleteForComment($commentId, $userId);
-        event(new FeedUpdated('comment_baze.deleted', (int) $comment->post_id, (int) $userId));
     }
 }

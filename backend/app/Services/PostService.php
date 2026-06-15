@@ -5,7 +5,6 @@ namespace App\Services;
 use App\DTOs\Post\CreatePostDTO;
 use App\DTOs\Post\PostResponseDTO;
 use App\DTOs\Post\UpdatePostDTO;
-use App\Events\FeedUpdated;
 use App\Interfaces\Repositories\IFollowRepository;
 use App\Interfaces\Repositories\IPostRepository;
 use App\Interfaces\Repositories\IUserRepository;
@@ -37,7 +36,6 @@ class PostService implements IPostService
     {
         // Cria a publicacao associada ao utilizador autenticado.
         $post = $this->postRepository->create($dto);
-        event(new FeedUpdated('post.created', (int) $post->id, (int) $post->user_id));
 
         return PostResponseDTO::fromModel($post, (int) $dto->user_id);
     }
@@ -56,7 +54,6 @@ class PostService implements IPostService
         }
 
         $updated = $this->postRepository->update($id, $dto);
-        event(new FeedUpdated('post.updated', (int) $updated->id, (int) $updated->user_id));
 
         return PostResponseDTO::fromModel($updated, (int) $userId, $isAdmin);
     }
@@ -75,7 +72,6 @@ class PostService implements IPostService
         }
 
         $this->postRepository->delete($id);
-        event(new FeedUpdated('post.deleted', (int) $post->id, (int) $userId));
     }
 
     public function getFeed(string $userId): LengthAwarePaginator

@@ -1,6 +1,6 @@
 # NzolaNet Frontend
 
-Aplicacao Angular da rede social NzolaNet. Este frontend consome a API Laravel, guarda a sessao do utilizador, apresenta o feed, perfis, comentarios, notificacoes e eventos em tempo real.
+Aplicacao Angular da rede social NzolaNet. Este frontend consome a API Laravel, guarda a sessao do utilizador, apresenta o feed, perfis, comentarios e notificacoes com polling.
 
 ## Stack tecnica
 
@@ -9,7 +9,6 @@ Aplicacao Angular da rede social NzolaNet. Este frontend consome a API Laravel, 
 - Tailwind CSS
 - Angular Router
 - HttpClient
-- Laravel Echo + Pusher JS para Reverb/WebSockets
 
 ## Funcionalidades
 
@@ -29,7 +28,7 @@ Aplicacao Angular da rede social NzolaNet. Este frontend consome a API Laravel, 
 - Sugestoes de perfis na home.
 - Notificacoes com sino no feed e pagina dedicada.
 - Feedback visual com toasts.
-- Actualizacao dinamica via Reverb.
+- Actualizacao dinamica por polling.
 
 ## Configuracao
 
@@ -44,16 +43,10 @@ Configurar a API em [src/environments/environment.ts](src/environments/environme
 ```ts
 export const environment = {
   apiBaseUrl: 'http://127.0.0.1:8000/api',
-  reverb: {
-    appKey: 'nzolanet-local-key',
-    host: '127.0.0.1',
-    port: 8080,
-    scheme: 'http',
-  },
 };
 ```
 
-Os valores de Reverb devem bater com o `.env` do backend.
+O frontend consulta essa API periodicamente para actualizar feed e notificacoes.
 
 ## Executar
 
@@ -95,7 +88,6 @@ A ligacao principal acontece nos services:
 - `src/app/services/feed.service.ts` - posts, comentarios e bazes.
 - `src/app/services/user.service.ts` - perfis, pesquisa, seguidores e privacidade.
 - `src/app/services/notification.service.ts` - notificacoes.
-- `src/app/services/realtime.service.ts` - Reverb/WebSockets.
 
 O interceptor:
 
@@ -129,4 +121,4 @@ ng generate component components/nome-da-pagina
 - Services centralizam contratos da API.
 - Toasts substituem `alert`, `confirm` e mensagens soltas no console.
 - Estado local e actualizado depois de criar, editar, apagar, comentar ou dar baze.
-- Eventos Reverb actualizam notificacoes e feed sem recarregar a pagina.
+- A home e a pagina de notificacoes usam polling para actualizar dados sem recarregar a pagina.

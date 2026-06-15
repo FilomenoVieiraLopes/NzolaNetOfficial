@@ -1,13 +1,12 @@
 # NzolaNet API
 
-Backend Laravel da rede social NzolaNet. A API concentra autenticacao, regras de negocio, persistencia, uploads, notificacoes, feed e eventos em tempo real.
+Backend Laravel da rede social NzolaNet. A API concentra autenticacao, regras de negocio, persistencia, uploads, notificacoes e feed.
 
 ## Stack tecnica
 
 - PHP 8.3+
 - Laravel
 - Laravel Sanctum para autenticacao por token
-- Laravel Reverb para WebSockets
 - MySQL
 - Eloquent ORM
 - Arquitetura em camadas com Controllers, DTOs, Services, Repositories e Interfaces
@@ -24,7 +23,7 @@ Backend Laravel da rede social NzolaNet. A API concentra autenticacao, regras de
 - Bazes: dar/remover em publicacoes e comentarios, impedindo duplicacao.
 - Comentarios: criar, listar, editar e apagar.
 - Notificacoes: geradas para baze, comentario e novo seguidor.
-- Tempo real: eventos de feed e notificacoes via Reverb.
+- Actualizacao dinamica: o frontend consulta a API periodicamente por polling.
 - Testes: suite Feature cobrindo endpoints principais.
 
 ## Estrutura
@@ -32,7 +31,6 @@ Backend Laravel da rede social NzolaNet. A API concentra autenticacao, regras de
 ```text
 app/
   DTOs/              Entrada e saida padronizada da API
-  Events/            Eventos enviados pelo Reverb/WebSockets
   Http/Controllers/  Recebem requests e devolvem JSON
   Interfaces/        Contratos de services e repositories
   Models/            Modelos Eloquent e relacoes
@@ -44,7 +42,6 @@ database/
   seeders/           Dados iniciais
 routes/
   api.php            Endpoints REST
-  channels.php       Autorizacao dos canais privados
 tests/
   Feature/           Testes dos fluxos principais da API
 ```
@@ -76,16 +73,10 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-4. Configurar Reverb no `.env`:
+4. Configurar broadcast desligado no `.env`:
 
 ```env
-BROADCAST_CONNECTION=reverb
-REVERB_APP_ID=nzolanet
-REVERB_APP_KEY=nzolanet-local-key
-REVERB_APP_SECRET=nzolanet-local-secret
-REVERB_HOST=127.0.0.1
-REVERB_PORT=8080
-REVERB_SCHEME=http
+BROADCAST_CONNECTION=null
 ```
 
 5. Preparar banco e uploads:
@@ -104,25 +95,13 @@ Servidor HTTP:
 php artisan serve
 ```
 
-Reverb/WebSockets:
-
-```bash
-php artisan reverb:start --debug
-```
-
-Fila de eventos:
-
-```bash
-php artisan queue:listen --tries=1 --timeout=0
-```
-
 Tudo em conjunto:
 
 ```bash
 composer run dev
 ```
 
-Esse comando sobe servidor HTTP, Reverb e fila em paralelo.
+Esse comando sobe o servidor HTTP da API.
 
 ## Autenticacao
 
@@ -183,6 +162,5 @@ php artisan test
 
 - Nao versionar `.env`.
 - Executar `php artisan storage:link` para imagens e videos carregarem.
-- Garantir que `queue:listen` esta activo para eventos/notificacoes em tempo real.
-- Garantir que `reverb:start` esta activo para notificacoes e feed dinamico.
+- As notificacoes e o feed dinamico sao actualizados pelo frontend com polling.
 - Em producao, ajustar `SANCTUM_TOKEN_EXPIRATION` conforme a politica de seguranca desejada.
