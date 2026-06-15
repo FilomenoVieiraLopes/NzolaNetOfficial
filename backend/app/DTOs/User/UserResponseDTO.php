@@ -10,7 +10,7 @@ class UserResponseDTO
         // Formato publico do utilizador enviado ao frontend.
         public readonly int $id,
         public readonly string $name,
-        public readonly string $email,
+        public readonly ?string $email,
         public readonly ?string $avatar_url,
         public readonly ?string $cover_url,
         public readonly ?string $bio,
@@ -28,24 +28,25 @@ class UserResponseDTO
         ?string $followStatus = null,
         bool $canViewPrivateContent = true,
         ?int $followersCount = null,
-        ?int $followingCount = null
+        ?int $followingCount = null,
+        bool $includeEmail = false
     ): self
     {
         // Mapeia o model Eloquent para um objeto sem senha/remember_token.
         return new self(
-            id: $user->id,
-            name: $user->name,
-            email: $user->email,
+            id: (int) $user->id,
+            name: (string) ($user->name ?? 'Utilizador'),
+            email: $includeEmail ? (string) ($user->email ?? '') : null,
             avatar_url: $user->avatar_url,
             cover_url: $user->cover_url,
             bio: $user->bio,
-            privacy: $user->privacy,
+            privacy: $user->privacy ?? 'public',
             role: $user->role ?? 'user',
-            created_at: $user->created_at->toDateTimeString(),
+            created_at: $user->created_at?->toDateTimeString() ?? '',
             follow_status: $followStatus,
-            can_view_private_content: $canViewPrivateContent,
-            followers_count: $followersCount ?? $user->followers()->where('status', 'accepted')->count(),
-            following_count: $followingCount ?? $user->following()->where('status', 'accepted')->count(),
+            can_view_private_content: (bool) $canViewPrivateContent,
+            followers_count: (int) ($followersCount ?? $user->followers()->where('status', 'accepted')->count()),
+            following_count: (int) ($followingCount ?? $user->following()->where('status', 'accepted')->count()),
         );
     }
 

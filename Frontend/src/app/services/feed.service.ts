@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { Comment } from '../models/comment.model';
 import { Post } from '../models/post.model';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = environment.apiBaseUrl;
 
 interface LaravelPaginator<T> {
   data: T[];
@@ -51,6 +52,7 @@ export class FeedService {
   }
 
   private loadPosts(path: string, page: number): Observable<ApiResponse<Post[]>> {
+    // Normaliza a paginacao do Laravel para o formato usado pelos componentes Angular.
     return this.http.get<LaravelPaginator<Post>>(`${API_BASE_URL}${path}`, {
       params: { page }
     }).pipe(
@@ -71,6 +73,7 @@ export class FeedService {
   }
 
   getPost(id: number): Observable<ApiResponse<Post>> {
+    // O detalhe da publicacao precisa trazer tambem os comentarios associados.
     return this.http.get<Post>(`${API_BASE_URL}/posts/${id}`).pipe(
       switchMap((post) => this.getComments(id).pipe(
         map((commentsResponse) => ({
@@ -83,6 +86,7 @@ export class FeedService {
   }
 
   createPost(data: { content: string; image?: File | null; video?: File | null }): Observable<ApiResponse<Post>> {
+    // Sem ficheiros, enviamos JSON simples; com imagem/video, usamos FormData.
     if (!data.image && !data.video) {
       return this.http.post<PostCreateResponse>(`${API_BASE_URL}/posts`, {
         content: data.content.trim()
@@ -116,6 +120,7 @@ export class FeedService {
   }
 
   updatePost(postId: number, data: { content: string; image?: File | null; video?: File | null }): Observable<ApiResponse<Post>> {
+    // Laravel aceita override de metodo quando o update tambem carrega ficheiros.
     if (!data.image && !data.video) {
       return this.http.put<PostCreateResponse>(`${API_BASE_URL}/posts/${postId}`, {
         content: data.content.trim()

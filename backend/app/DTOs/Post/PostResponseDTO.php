@@ -32,19 +32,19 @@ class PostResponseDTO
             ->exists();
 
         return new self(
-            id: $post->id,
-            author_name: $post->user->name,
-            author_avatar: $post->user->avatar_url ?? '',
-            user_id: $post->user_id,
-            content: $post->content,
+            id: (int) $post->id,
+            author_name: $post->user?->name ?? 'Utilizador removido',
+            author_avatar: $post->user?->avatar_url ?? '',
+            user_id: (int) $post->user_id,
+            content: (string) ($post->content ?? ''),
             image_url: $post->image_url,
             video_url: $post->video_url,
-            bazes_count: $post->bazes_count ?? $post->bazes()->count(),
-            comments_count: $post->comments_count ?? $post->comments()->count(),
+            bazes_count: (int) ($post->bazes_count ?? $post->bazes()->count()),
+            comments_count: (int) ($post->comments_count ?? $post->comments()->count()),
             has_bazed: $hasBazed,
             can_edit: $isAuthor || $isAdmin,
             can_delete: $isAuthor || $isAdmin,
-            created_at: $post->created_at->toDateTimeString(),
+            created_at: $post->created_at?->toDateTimeString() ?? '',
         );
     }
 

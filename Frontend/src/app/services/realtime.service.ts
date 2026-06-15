@@ -2,13 +2,14 @@ import { Injectable } from '@angular/core';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { Subject } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Notification } from '../models/notification.model';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
-const REVERB_APP_KEY = 'awiybpaoijxnqpnyka6t';
-const REVERB_HOST = '127.0.0.1';
-const REVERB_PORT = 8080;
-const REVERB_SCHEME: 'http' | 'https' = 'http';
+const API_BASE_URL = environment.apiBaseUrl;
+const REVERB_APP_KEY = environment.reverb.appKey;
+const REVERB_HOST = environment.reverb.host;
+const REVERB_PORT = environment.reverb.port;
+const REVERB_SCHEME = environment.reverb.scheme;
 
 export interface FeedUpdatedEvent {
   action: string;
@@ -34,6 +35,7 @@ export class RealtimeService {
 
     this.disconnect();
 
+    // O canal privado usa o token Sanctum para confirmar que o utilizador pode ouvir eventos.
     const token = localStorage.getItem('nzolanet_session_token');
     if (!token) return;
 
@@ -58,12 +60,14 @@ export class RealtimeService {
 
     this.connectedUserId = userId;
 
+    // Notificacoes sao privadas: apenas o dono da conta recebe o evento.
     this.echo
       .private(`users.${userId}`)
       .listen('.notification.created', (event: { notification: Notification }) => {
         this.notificationCreatedSubject.next(event.notification);
       });
 
+    // O feed e publico para atualizar posts, bazes e comentarios em tempo real.
     this.echo
       .channel('feed')
       .listen('.feed.updated', (event: FeedUpdatedEvent) => {
@@ -74,6 +78,7 @@ export class RealtimeService {
   disconnect(): void {
     if (!this.echo) return;
 
+    // Ao trocar de utilizador ou sair, limpamos canais para evitar eventos duplicados.
     if (this.connectedUserId) {
       this.echo.leave(`users.${this.connectedUserId}`);
     }

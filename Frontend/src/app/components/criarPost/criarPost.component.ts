@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-criar-post',
@@ -15,6 +16,7 @@ export class CriarPostComponent {
   private feedService = inject(FeedService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   currentUser = this.authService.getCurrentUser();
   postText = '';
@@ -26,7 +28,10 @@ export class CriarPostComponent {
   emojis: string[] = [':)', ':D', '<3', '+1', '!!', '?'];
 
   publishPost(): void {
-    if (!this.postText.trim() && !this.selectedFile) return;
+    if (!this.postText.trim() && !this.selectedFile) {
+      this.toast.warning('Escreva algo ou escolha uma imagem/video para publicar.');
+      return;
+    }
 
     this.isPublishing = true;
     this.feedService.createPost({
@@ -36,11 +41,11 @@ export class CriarPostComponent {
     }).subscribe({
       next: () => {
         this.isPublishing = false;
+        this.toast.success('Publicacao criada com sucesso.');
         this.router.navigate(['/app/home']);
       },
       error: (err) => {
-        console.error('Error publishing post', err);
-        alert(err?.error?.message || 'Nao foi possivel publicar. Verifique o conteudo e tente novamente.');
+        this.toast.error(this.toast.errorMessage(err, 'Nao foi possivel publicar. Verifique o conteudo e tente novamente.'));
         this.isPublishing = false;
       }
     });

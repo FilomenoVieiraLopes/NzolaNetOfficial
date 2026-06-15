@@ -34,7 +34,8 @@ class UserService implements IUserService
         return UserResponseDTO::fromModel(
             $user,
             $follow?->status,
-            $canViewPrivateContent
+            $canViewPrivateContent,
+            includeEmail: $viewerId !== null && (int) $viewerId === (int) $id
         );
     }
 
@@ -65,7 +66,7 @@ class UserService implements IUserService
 
         $user = $this->userRepository->update($id, $dto);
 
-        return UserResponseDTO::fromModel($user);
+        return UserResponseDTO::fromModel($user, includeEmail: true);
     }
 
     public function updateAvatar(string $id, string $avatarUrl): UserResponseDTO
@@ -75,17 +76,17 @@ class UserService implements IUserService
 
         $user = $this->userRepository->updateAvatar($id, $avatarUrl);
 
-        return UserResponseDTO::fromModel($user);
+        return UserResponseDTO::fromModel($user, includeEmail: true);
     }
 
     public function updateCover(string $id, string $coverUrl): UserResponseDTO
     {
-        // The controller stores the file; the service saves the URL on the profile.
+        // O controller guarda o ficheiro; o service grava a URL no perfil.
         $this->ensureUserExists($id);
 
         $user = $this->userRepository->updateCover($id, $coverUrl);
 
-        return UserResponseDTO::fromModel($user);
+        return UserResponseDTO::fromModel($user, includeEmail: true);
     }
 
     public function follow(string $followerId, string $followingId): string

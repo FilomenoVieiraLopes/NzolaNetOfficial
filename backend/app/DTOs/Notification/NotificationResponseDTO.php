@@ -11,7 +11,7 @@ class NotificationResponseDTO
         public readonly int $id,
         public readonly int $user_id,
         public readonly string $type,
-        public readonly int $related_id,
+        public readonly ?int $related_id,
         public readonly ?int $actor_id,
         public readonly ?string $actor_name,
         public readonly ?string $actor_avatar,
@@ -24,19 +24,19 @@ class NotificationResponseDTO
     public static function fromModel(Notification $notification): self
     {
         return new self(
-            id: $notification->id,
-            user_id: $notification->user_id,
-            type: $notification->type,
-            related_id: $notification->related_id,
-            actor_id: $notification->actor_id,
+            id: (int) $notification->id,
+            user_id: (int) $notification->user_id,
+            type: (string) ($notification->type ?? 'unknown'),
+            related_id: $notification->related_id !== null ? (int) $notification->related_id : null,
+            actor_id: $notification->actor_id !== null ? (int) $notification->actor_id : null,
             actor_name: $notification->actor?->name,
             actor_avatar: $notification->actor?->avatar_url,
-            post_id: $notification->post_id,
+            post_id: $notification->post_id !== null ? (int) $notification->post_id : null,
             post_excerpt: $notification->post?->content
                 ? mb_substr($notification->post->content, 0, 90)
                 : null,
-            read: $notification->read,
-            created_at: $notification->created_at->toDateTimeString(),
+            read: (bool) ($notification->read ?? false),
+            created_at: $notification->created_at?->toDateTimeString() ?? '',
         );
     }
 

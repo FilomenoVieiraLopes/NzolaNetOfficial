@@ -123,7 +123,7 @@ class UserController extends Controller
     // POST /api/users/{id}/cover
     public function updateCover(Request $request, string $id): JsonResponse
     {
-        // Only the owner can change the cover.
+        // Apenas o dono da conta pode alterar a capa.
         if ((int) $request->user()->id !== (int) $id) {
             return response()->json([
                 'message' => 'Sem permissao para alterar esta capa.',

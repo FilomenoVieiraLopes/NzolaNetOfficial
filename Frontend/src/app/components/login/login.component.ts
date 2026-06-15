@@ -3,6 +3,7 @@ import { RouterLink, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   standalone: true,
@@ -14,6 +15,7 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   email = '';
   password = '';
@@ -21,7 +23,7 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (!this.email || !this.password) {
-      alert('Por favor, introduza o seu email e palavra-passe.');
+      this.toast.warning('Por favor, introduza o seu email e palavra-passe.');
       return;
     }
 
@@ -30,13 +32,13 @@ export class LoginComponent {
       next: (res) => {
         this.isLoading = false;
         if (res.success) {
+          this.toast.success('Login feito com sucesso.');
           this.router.navigate(['/app/home']);
         }
       },
       error: (err) => {
         this.isLoading = false;
-        alert('Erro ao fazer login. Verifique as suas credenciais.');
-        console.error(err);
+        this.toast.error(this.toast.errorMessage(err, 'Erro ao fazer login. Verifique as suas credenciais.'));
       }
     });
   }

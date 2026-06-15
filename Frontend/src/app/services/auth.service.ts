@@ -2,9 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { User } from '../models/user.model';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = environment.apiBaseUrl;
 
 interface AuthResponse {
   message: string;
@@ -24,6 +25,7 @@ export class AuthService {
   constructor() { }
 
   private saveSession(res: AuthResponse): void {
+    // O token Sanctum fica no browser para autenticar as proximas chamadas HTTP.
     localStorage.setItem(this.tokenKey, res.token);
     localStorage.setItem(this.userKey, JSON.stringify(res.user));
   }
@@ -36,6 +38,7 @@ export class AuthService {
   }
 
   register(data: any): Observable<{ success: boolean; token: string; user: User }> {
+    // O formulario usa nomes amigaveis; aqui adaptamos para o contrato esperado pela API.
     const payload = {
       avatar_url: data.avatarUrl,
       name: data.fullName ?? data.name,
@@ -59,6 +62,7 @@ export class AuthService {
   }
 
   logout() {
+    // Termina a sessao local e devolve o utilizador para a area publica.
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
     this.router.navigate(['/']);
@@ -73,6 +77,7 @@ export class AuthService {
   }
 
   getCurrentUser(): User | null {
+    // Mantemos uma copia local do utilizador para preencher menus e perfil sem nova chamada.
     const stored = localStorage.getItem(this.userKey);
     return stored ? JSON.parse(stored) : null;
   }

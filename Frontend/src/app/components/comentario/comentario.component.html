@@ -39,7 +39,7 @@
               </div>
 
               <div class="flex items-center gap-6">
-                <button class="flex items-center gap-1.5 transition-colors" [class.text-red-600]="post.has_bazed" [class.text-on-surface-variant]="!post.has_bazed">
+                <button (click)="giveBaze()" class="flex items-center gap-1.5 transition-colors" [class.text-red-600]="post.has_bazed" [class.text-on-surface-variant]="!post.has_bazed">
                   <span class="material-symbols-outlined text-[20px]" [style.font-variation-settings]="post.has_bazed ? '\'FILL\' 1' : '\'FILL\' 0'">favorite</span>
                   <span class="text-label-sm">{{ post.bazes_count }}</span>
                 </button>
@@ -87,6 +87,10 @@
               <ng-template #commentTextView>
                 <p class="font-body-md text-on-surface-variant text-sm leading-relaxed mb-2 whitespace-pre-wrap">{{ comment.body }}</p>
               </ng-template>
+              <button (click)="giveCommentBaze(comment)" class="inline-flex items-center gap-1 text-xs transition-colors" [class.text-red-600]="comment.has_bazed" [class.text-on-surface-variant]="!comment.has_bazed">
+                <span class="material-symbols-outlined text-[16px]" [style.font-variation-settings]="comment.has_bazed ? '\'FILL\' 1' : '\'FILL\' 0'">favorite</span>
+                <span>{{ comment.bazes_count || 0 }}</span>
+              </button>
             </div>
           </div>
         </div>

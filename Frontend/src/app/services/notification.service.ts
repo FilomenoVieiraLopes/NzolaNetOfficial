@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Notification } from '../models/notification.model';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = environment.apiBaseUrl;
 
 @Injectable({
   providedIn: 'root'

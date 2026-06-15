@@ -21,7 +21,7 @@ class PostService implements IPostService
         private readonly IFollowRepository $followRepository,
     ) {}
 
-    public function getById(string $id): PostResponseDTO
+    public function getById(string $id, ?int $currentUserId = null, bool $isAdmin = false): PostResponseDTO
     {
         // Busca com autor e contadores para montar a resposta completa.
         $post = $this->postRepository->findById($id);
@@ -30,7 +30,7 @@ class PostService implements IPostService
             throw new \Exception('Publicacao nao encontrada.', 404);
         }
 
-        return PostResponseDTO::fromModel($post);
+        return PostResponseDTO::fromModel($post, $currentUserId, $isAdmin);
     }
 
     public function create(CreatePostDTO $dto): PostResponseDTO
@@ -39,7 +39,7 @@ class PostService implements IPostService
         $post = $this->postRepository->create($dto);
         event(new FeedUpdated('post.created', (int) $post->id, (int) $post->user_id));
 
-        return PostResponseDTO::fromModel($post);
+        return PostResponseDTO::fromModel($post, (int) $dto->user_id);
     }
 
     public function update(string $id, string $userId, UpdatePostDTO $dto, bool $isAdmin = false): PostResponseDTO
@@ -58,7 +58,7 @@ class PostService implements IPostService
         $updated = $this->postRepository->update($id, $dto);
         event(new FeedUpdated('post.updated', (int) $updated->id, (int) $updated->user_id));
 
-        return PostResponseDTO::fromModel($updated);
+        return PostResponseDTO::fromModel($updated, (int) $userId, $isAdmin);
     }
 
     public function delete(string $id, string $userId, bool $isAdmin = false): void

@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { User } from '../../models/user.model';
+import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -13,6 +14,7 @@ import { UserService } from '../../services/user.service';
 })
 export class PesquisarComponent {
   private userService = inject(UserService);
+  private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
 
   query = '';
@@ -44,10 +46,12 @@ export class PesquisarComponent {
       next: (response) => {
         this.message = response.message;
         this.error = '';
+        this.toast.success(response.status === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
       },
       error: (error) => {
-        this.error = error?.error?.message || 'Nao foi possivel seguir este utilizador.';
+        this.error = this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.');
         this.message = '';
+        this.toast.error(this.error);
       }
     });
   }
@@ -67,8 +71,8 @@ export class PesquisarComponent {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error searching users', error);
-        this.error = 'Nao foi possivel pesquisar agora.';
+        this.error = this.toast.errorMessage(error, 'Nao foi possivel pesquisar agora.');
+        this.toast.error(this.error);
         this.isLoading = false;
       }
     });

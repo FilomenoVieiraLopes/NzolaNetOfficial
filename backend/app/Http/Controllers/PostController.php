@@ -68,11 +68,15 @@ class PostController extends Controller
     }
 
     // GET /api/posts/{id}
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         try {
             // O service valida existencia e devolve o DTO de resposta.
-            $post = $this->postService->getById($id);
+            $post = $this->postService->getById(
+                $id,
+                (int) $request->user()->id,
+                $request->user()->isAdmin()
+            );
 
             return response()->json($post->toArray());
 
@@ -143,7 +147,11 @@ class PostController extends Controller
 
         try {
             // Confirma autoria antes de fazer upload, evitando ficheiros orfaos.
-            $existingPost = $this->postService->getById($id);
+            $existingPost = $this->postService->getById(
+                $id,
+                (int) $request->user()->id,
+                $request->user()->isAdmin()
+            );
 
             if (!$request->user()->isAdmin() && (int) $existingPost->user_id !== (int) $request->user()->id) {
                 return response()->json([

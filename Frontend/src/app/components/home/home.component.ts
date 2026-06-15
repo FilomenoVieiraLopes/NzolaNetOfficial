@@ -11,6 +11,7 @@ import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 import { NotificationService } from '../../services/notification.service';
 import { RealtimeService } from '../../services/realtime.service';
+import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -25,6 +26,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private userService = inject(UserService);
   private notificationService = inject(NotificationService);
   private realtimeService = inject(RealtimeService);
+  private toast = inject(ToastService);
   private router = inject(Router);
 
   posts: Post[] = [];
@@ -55,6 +57,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   openMenuPostId: number | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private realtimeSubscriptions: Subscription[] = [];
+  private pendingBazePostIds = new Set<number>();
+  private pendingCommentBazeIds = new Set<number>();
 
   ngOnInit(): void {
     this.targetPostId = history.state?.postId ? Number(history.state.postId) : null;
@@ -100,7 +104,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.focusTargetPost();
       },
       error: (error) => {
-        console.error('Error fetching posts', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar as publicacoes.'));
         this.isLoading = false;
       }
     });
@@ -124,13 +128,16 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.isLoadingMore = false;
       },
       error: (error) => {
-        console.error('Error loading more posts', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar mais publicacoes.'));
         this.isLoadingMore = false;
       }
     });
   }
 
   giveBaze(post: Post): void {
+    if (this.pendingBazePostIds.has(post.id)) return;
+
+    this.pendingBazePostIds.add(post.id);
     const request = post.has_bazed
       ? this.feedService.removeBaze(post.id)
       : this.feedService.giveBaze(post.id);
@@ -138,9 +145,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     request.subscribe({
       next: () => {
         post.has_bazed = !post.has_bazed;
-        post.bazes_count += post.has_bazed ? 1 : -1;
+        post.bazes_count = Math.max(0, post.bazes_count + (post.has_bazed ? 1 : -1));
+        this.pendingBazePostIds.delete(post.id);
       },
-      error: (error) => console.error('Error giving baze', error)
+      error: (error) => {
+        this.pendingBazePostIds.delete(post.id);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar o baze.'));
+      }
     });
   }
 
@@ -179,17 +190,28 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.posts = this.posts.map((item) => item.id === post.id ? response.data : item);
         this.cancelEditPost();
+        this.toast.success('Publicacao atualizada com sucesso.');
       },
-      error: (error) => console.error('Error updating post', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar a publicacao.'))
     });
   }
 
   deletePost(post: Post): void {
-    if (!confirm('Deseja eliminar esta publicacao?')) return;
+    this.toast.confirm({
+      title: 'Eliminar publicacao',
+      message: 'Deseja eliminar esta publicacao? Esta acao nao pode ser desfeita.',
+      confirmText: 'Eliminar',
+      tone: 'danger',
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.feedService.deletePost(post.id).subscribe({
-      next: () => this.posts = this.posts.filter((item) => item.id !== post.id),
-      error: (error) => console.error('Error deleting post', error)
+      this.feedService.deletePost(post.id).subscribe({
+        next: () => {
+          this.posts = this.posts.filter((item) => item.id !== post.id);
+          this.toast.success('Publicacao eliminada com sucesso.');
+        },
+        error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar a publicacao.'))
+      });
     });
   }
 
@@ -218,8 +240,9 @@ export class HomeComponent implements OnInit, OnDestroy {
         post.comments = [...(post.comments || []), response.data];
         post.comments_count += 1;
         this.commentDrafts[post.id] = '';
+        this.toast.success('Comentario publicado com sucesso.');
       },
-      error: (error) => console.error('Error adding comment', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar o comentario.'))
     });
   }
 
@@ -258,24 +281,36 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (response) => {
         post.comments = (post.comments || []).map((item) => item.id === comment.id ? response.data : item);
         this.cancelEditComment();
+        this.toast.success('Comentario atualizado com sucesso.');
       },
-      error: (error) => console.error('Error updating comment', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar o comentario.'))
     });
   }
 
   deleteComment(post: Post, comment: Comment): void {
-    if (!confirm('Deseja eliminar este comentario?')) return;
+    this.toast.confirm({
+      title: 'Eliminar comentario',
+      message: 'Deseja eliminar este comentario?',
+      confirmText: 'Eliminar',
+      tone: 'danger',
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.feedService.deleteComment(comment.id).subscribe({
-      next: () => {
-        post.comments = (post.comments || []).filter((item) => item.id !== comment.id);
-        post.comments_count = Math.max(0, post.comments_count - 1);
-      },
-      error: (error) => console.error('Error deleting comment', error)
+      this.feedService.deleteComment(comment.id).subscribe({
+        next: () => {
+          post.comments = (post.comments || []).filter((item) => item.id !== comment.id);
+          post.comments_count = Math.max(0, post.comments_count - 1);
+          this.toast.success('Comentario eliminado com sucesso.');
+        },
+        error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar o comentario.'))
+      });
     });
   }
 
   giveCommentBaze(comment: Comment): void {
+    if (this.pendingCommentBazeIds.has(comment.id)) return;
+
+    this.pendingCommentBazeIds.add(comment.id);
     const request = comment.has_bazed
       ? this.feedService.removeCommentBaze(comment.id)
       : this.feedService.giveCommentBaze(comment.id);
@@ -283,9 +318,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     request.subscribe({
       next: () => {
         comment.has_bazed = !comment.has_bazed;
-        comment.bazes_count = (comment.bazes_count || 0) + (comment.has_bazed ? 1 : -1);
+        comment.bazes_count = Math.max(0, (comment.bazes_count || 0) + (comment.has_bazed ? 1 : -1));
+        this.pendingCommentBazeIds.delete(comment.id);
       },
-      error: (error) => console.error('Error giving comment baze', error)
+      error: (error) => {
+        this.pendingCommentBazeIds.delete(comment.id);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar o baze do comentario.'));
+      }
     });
   }
 
@@ -313,15 +352,21 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   followUser(user: User): void {
     this.userService.follow(user.id).subscribe({
-      next: () => this.searchResults = this.searchResults.filter((item) => item.id !== user.id),
-      error: (error) => console.error('Error following user', error)
+      next: (response) => {
+        this.searchResults = this.searchResults.filter((item) => item.id !== user.id);
+        this.toast.success(response.status === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.'))
     });
   }
 
   followSuggestedUser(user: User): void {
     this.userService.follow(user.id).subscribe({
-      next: () => this.suggestedUsers = this.suggestedUsers.filter((item) => item.id !== user.id),
-      error: (error) => console.error('Error following suggested user', error)
+      next: (response) => {
+        this.suggestedUsers = this.suggestedUsers.filter((item) => item.id !== user.id);
+        this.toast.success(response.status === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.'))
     });
   }
 
@@ -335,8 +380,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: () => {
         this.notifications = this.notifications.map((notification) => ({ ...notification, read: true }));
         this.unreadNotifications = 0;
+        this.toast.success('Notificacoes marcadas como lidas.');
       },
-      error: (error) => console.error('Error marking notifications as read', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel marcar as notificacoes como lidas.'))
     });
   }
 
@@ -378,8 +424,9 @@ export class HomeComponent implements OnInit, OnDestroy {
         if (!notification.read) {
           this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
         }
+        this.toast.success('Notificacao eliminada.');
       },
-      error: (error) => console.error('Error deleting notification', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar a notificacao.'))
     });
   }
 
@@ -405,7 +452,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.isSearching = false;
       },
       error: (error) => {
-        console.error('Error searching users', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel pesquisar agora.'));
         this.searchError = 'Nao foi possivel pesquisar agora.';
         this.searchResults = [];
         this.isSearching = false;
@@ -422,7 +469,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.isLoadingSuggestions = false;
       },
       error: (error) => {
-        console.error('Error loading user suggestions', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar sugestoes de perfis.'));
         this.suggestedUsers = [];
         this.isLoadingSuggestions = false;
       }
@@ -442,7 +489,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.loadingComments[post.id] = false;
       },
       error: (error) => {
-        console.error('Error loading comments', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar comentarios.'));
         this.loadingComments[post.id] = false;
       }
     });
@@ -464,7 +511,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.applyPagination(latestResponse?.meta);
         this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
       },
-      error: (error) => console.error('Error refreshing feed', error)
+      error: () => {}
     });
   }
 
@@ -474,7 +521,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       .forEach((post) => {
         this.feedService.getComments(post.id).subscribe({
           next: (response) => post.comments = response.data,
-          error: (error) => console.error('Error refreshing comments', error)
+          error: () => {}
         });
       });
   }
@@ -546,7 +593,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.unreadNotifications = notifications.filter((notification) => !notification.read).length;
       },
       error: (error) => {
-        if (showErrors) console.error('Error loading notifications', error);
+        if (showErrors) this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar notificacoes.'));
       }
     });
   }

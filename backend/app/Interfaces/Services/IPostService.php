@@ -9,7 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface IPostService
 {
-    public function getById(string $id): PostResponseDTO;
+    public function getById(string $id, ?int $currentUserId = null, bool $isAdmin = false): PostResponseDTO;
     public function create(CreatePostDTO $dto): PostResponseDTO;
     public function update(string $id, string $userId, UpdatePostDTO $dto, bool $isAdmin = false): PostResponseDTO;
     public function delete(string $id, string $userId, bool $isAdmin = false): void;

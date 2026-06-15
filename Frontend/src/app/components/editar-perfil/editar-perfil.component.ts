@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -15,6 +16,7 @@ import { UserService } from '../../services/user.service';
 export class EditarPerfilComponent implements OnInit {
   private authService = inject(AuthService);
   private userService = inject(UserService);
+  private toast = inject(ToastService);
   private router = inject(Router);
 
   user: User | null = null;
@@ -49,12 +51,14 @@ export class EditarPerfilComponent implements OnInit {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
       this.error = 'A foto deve ser JPG, PNG, WEBP ou GIF.';
+      this.toast.warning(this.error);
       input.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       this.error = 'A foto deve ter no maximo 5MB.';
+      this.toast.warning(this.error);
       input.value = '';
       return;
     }
@@ -74,12 +78,14 @@ export class EditarPerfilComponent implements OnInit {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
       this.error = 'A imagem de capa deve ser JPG, PNG, WEBP ou GIF.';
+      this.toast.warning(this.error);
       input.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       this.error = 'A imagem de capa deve ter no maximo 5MB.';
+      this.toast.warning(this.error);
       input.value = '';
       return;
     }
@@ -92,7 +98,10 @@ export class EditarPerfilComponent implements OnInit {
   }
 
   save(): void {
-    if (!this.user || !this.name.trim()) return;
+    if (!this.user || !this.name.trim()) {
+      this.toast.warning('O nome do perfil e obrigatorio.');
+      return;
+    }
 
     this.isSaving = true;
     this.error = '';
@@ -102,7 +111,7 @@ export class EditarPerfilComponent implements OnInit {
       privacy: this.privacy
     }).subscribe({
       next: (response) => {
-        // If avatar selected, upload it first, then optionally upload cover.
+        // Se houver avatar, envia primeiro a foto e depois a capa, se existir.
         if (this.avatarFile) {
           this.userService.updateAvatar(response.user.id, this.avatarFile).subscribe({
             next: (avatarResponse) => {
@@ -118,8 +127,8 @@ export class EditarPerfilComponent implements OnInit {
                     cover_url: coverResponse.cover_url
                   }),
                   error: (error) => {
-                    console.error('Error updating cover', error);
                     this.error = this.validationMessage(error);
+                    this.toast.error(this.error);
                     this.isSaving = false;
                   }
                 });
@@ -129,15 +138,15 @@ export class EditarPerfilComponent implements OnInit {
               this.finishSave(userAfterAvatar);
             },
             error: (error) => {
-              console.error('Error updating avatar', error);
               this.error = this.validationMessage(error);
+              this.toast.error(this.error);
               this.isSaving = false;
             }
           });
           return;
         }
 
-        // If only cover selected, upload it.
+        // Se apenas houver capa, envia so a imagem de capa.
         if (this.coverFile) {
           this.userService.updateCover(response.user.id, this.coverFile).subscribe({
             next: (coverResponse) => this.finishSave(coverResponse.user || {
@@ -145,8 +154,8 @@ export class EditarPerfilComponent implements OnInit {
               cover_url: coverResponse.cover_url
             }),
             error: (error) => {
-              console.error('Error updating cover', error);
               this.error = this.validationMessage(error);
+              this.toast.error(this.error);
               this.isSaving = false;
             }
           });
@@ -156,8 +165,8 @@ export class EditarPerfilComponent implements OnInit {
         this.finishSave(response.user);
       },
       error: (error) => {
-        console.error('Error updating profile', error);
         this.error = this.validationMessage(error);
+        this.toast.error(this.error);
         this.isSaving = false;
       }
     });
@@ -175,6 +184,7 @@ export class EditarPerfilComponent implements OnInit {
   private finishSave(user: User): void {
     this.authService.setCurrentUser(user);
     this.isSaving = false;
+    this.toast.success('Perfil guardado com sucesso.');
     this.router.navigate(['/app/perfil']);
   }
 

@@ -6,6 +6,7 @@ import { Notification } from '../../models/notification.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { RealtimeService } from '../../services/realtime.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-notificacao',
@@ -17,6 +18,7 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private realtimeService = inject(RealtimeService);
+  private toast = inject(ToastService);
   private router = inject(Router);
 
   notifications: Notification[] = [];
@@ -45,7 +47,7 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error fetching notifications', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar notificacoes.'));
         this.isLoading = false;
       }
     });
@@ -56,7 +58,7 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
 
     this.notificationService.markAsRead(notification.id).subscribe({
       next: () => notification.read = true,
-      error: (error) => console.error('Error marking notification as read', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel marcar a notificacao como lida.'))
     });
   }
 
@@ -78,8 +80,11 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
 
   markAllAsRead(): void {
     this.notificationService.markAllAsRead().subscribe({
-      next: () => this.notifications = this.notifications.map((notification) => ({ ...notification, read: true })),
-      error: (error) => console.error('Error marking notifications as read', error)
+      next: () => {
+        this.notifications = this.notifications.map((notification) => ({ ...notification, read: true }));
+        this.toast.success('Notificacoes marcadas como lidas.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel marcar notificacoes como lidas.'))
     });
   }
 
@@ -87,8 +92,11 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
     event?.stopPropagation();
 
     this.notificationService.deleteNotification(notification.id).subscribe({
-      next: () => this.notifications = this.notifications.filter((item) => item.id !== notification.id),
-      error: (error) => console.error('Error deleting notification', error)
+      next: () => {
+        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+        this.toast.success('Notificacao eliminada.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar a notificacao.'))
     });
   }
 

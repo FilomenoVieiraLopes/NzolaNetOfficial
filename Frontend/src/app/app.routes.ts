@@ -17,20 +17,20 @@ import { authGuard } from './guards/auth.guard';
 import { noAuthGuard } from './guards/no-auth.guard';
 
 export const routes: Routes = [
-  // Landing Page (Página Inicial quando deslogado)
+  // Pagina inicial para visitantes sem sessao.
   {
     path: '',
     component: LandingPageComponent,
     canActivate: [noAuthGuard],
     pathMatch: 'full'
   },
-  // Registro
+  // Registo
   {
     path: 'registrar',
     component: RegistrarComponent,
     canActivate: [noAuthGuard]
   },
-  // Login
+  // Autenticacao
   {
     path: 'login',
     component: LoginComponent,
@@ -48,7 +48,7 @@ export const routes: Routes = [
   },
 
 
-  // Sistema (Com Sidebar/Navbar do MainLayout)
+  // Area autenticada com layout principal.
   {
     path: 'app',
     component: MainLayoutComponent,
@@ -95,10 +95,10 @@ export const routes: Routes = [
         component: ComentarioComponent,
       },
     
-      // Redireciona 'app' sozinho para 'app/home'
+      // Redireciona 'app' sozinho para 'app/home'.
       { path: '', redirectTo: 'home', pathMatch: 'full' }
     ],
   },
-  // Redireciona qualquer rota inválida de volta à landing page
+  // Redireciona qualquer rota invalida para a pagina inicial.
   { path: '**', redirectTo: '', pathMatch: 'full' }
 ];

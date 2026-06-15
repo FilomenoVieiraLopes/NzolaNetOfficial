@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   standalone: true,
@@ -14,6 +15,7 @@ import { AuthService } from '../../services/auth.service';
 export class RegistrarComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   avatar_url = '';
   fullName = '';
@@ -26,12 +28,12 @@ export class RegistrarComponent {
 
   onSubmit(): void {
     if (!this.fullName.trim() || !this.email.trim() || !this.password) {
-      alert('Por favor, preencha nome, email e palavra-passe.');
+      this.toast.warning('Por favor, preencha nome, email e palavra-passe.');
       return;
     }
 
     if (!this.termsAccepted) {
-      alert('Precisa aceitar os termos de servico para continuar.');
+      this.toast.warning('Precisa aceitar os termos de servico para continuar.');
       return;
     }
 
@@ -47,13 +49,13 @@ export class RegistrarComponent {
       next: (res) => {
         this.isLoading = false;
         if (res.success) {
+          this.toast.success('Conta criada com sucesso.');
           this.router.navigate(['/app/home']);
         }
       },
       error: (err) => {
         this.isLoading = false;
-        alert(err?.error?.message || 'Erro ao registar utilizador. Tente novamente.');
-        console.error(err);
+        this.toast.error(this.toast.errorMessage(err, 'Erro ao registar utilizador. Tente novamente.'));
       }
     });
   }
@@ -64,12 +66,12 @@ export class RegistrarComponent {
       const file = input.files[0];
 
       if (file.size > 2 * 1024 * 1024) {
-        alert('Imagem muito grande. Maximo 2MB.');
+        this.toast.warning('Imagem muito grande. Maximo 2MB.');
         return;
       }
 
       if (!file.type.startsWith('image/')) {
-        alert('Por favor, selecione um ficheiro de imagem.');
+        this.toast.warning('Por favor, selecione um ficheiro de imagem.');
         return;
       }
 

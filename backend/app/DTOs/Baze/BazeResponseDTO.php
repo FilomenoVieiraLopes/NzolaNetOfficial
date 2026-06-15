@@ -17,10 +17,10 @@ class BazeResponseDTO
     public static function fromModel(Baze $baze): self
     {
         return new self(
-            id: $baze->id,
-            post_id: $baze->post_id,
-            user_id: $baze->user_id,
-            created_at: $baze->created_at->toDateTimeString(),
+            id: (int) $baze->id,
+            post_id: (int) $baze->post_id,
+            user_id: (int) $baze->user_id,
+            created_at: $baze->created_at?->toDateTimeString() ?? '',
         );
     }
 

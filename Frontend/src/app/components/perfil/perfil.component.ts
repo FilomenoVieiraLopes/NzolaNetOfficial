@@ -6,6 +6,7 @@ import { Post } from '../../models/post.model';
 import { User } from '../../models/user.model';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
+import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class PerfilComponent implements OnInit {
   private authService = inject(AuthService);
   private userService = inject(UserService);
   private feedService = inject(FeedService);
+  private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -89,8 +91,8 @@ export class PerfilComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading profile', error);
-        this.error = error?.error?.message || 'Nao foi possivel carregar este perfil.';
+        this.error = this.toast.errorMessage(error, 'Nao foi possivel carregar este perfil.');
+        this.toast.error(this.error);
         this.isLoading = false;
       }
     });
@@ -106,12 +108,12 @@ export class PerfilComponent implements OnInit {
           if (this.isFollowing) this.followStatus = 'accepted';
         }
       },
-      error: (error) => console.error('Error loading followers', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar seguidores.'))
     });
 
     this.userService.getFollowing(userId).subscribe({
       next: (following) => this.followingCount = following.length,
-      error: (error) => console.error('Error loading following', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar perfis seguidos.'))
     });
   }
 
@@ -136,7 +138,7 @@ export class PerfilComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading profile posts', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar publicacoes do perfil.'));
         this.isLoading = false;
       }
     });
@@ -157,7 +159,7 @@ export class PerfilComponent implements OnInit {
         this.isLoadingMore = false;
       },
       error: (error) => {
-        console.error('Error loading more profile posts', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar mais publicacoes.'));
         this.isLoadingMore = false;
       }
     });
@@ -196,18 +198,29 @@ export class PerfilComponent implements OnInit {
       next: (response) => {
         this.posts = this.posts.map((item) => item.id === post.id ? response.data : item);
         this.cancelEditPost();
+        this.toast.success('Publicacao atualizada com sucesso.');
       },
-      error: (error) => console.error('Error updating post', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar a publicacao.'))
     });
   }
 
   deletePost(post: Post, event?: Event): void {
     event?.stopPropagation();
-    if (!confirm('Deseja eliminar esta publicacao?')) return;
+    this.toast.confirm({
+      title: 'Eliminar publicacao',
+      message: 'Deseja eliminar esta publicacao? Esta acao nao pode ser desfeita.',
+      confirmText: 'Eliminar',
+      tone: 'danger',
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.feedService.deletePost(post.id).subscribe({
-      next: () => this.posts = this.posts.filter((item) => item.id !== post.id),
-      error: (error) => console.error('Error deleting post', error)
+      this.feedService.deletePost(post.id).subscribe({
+        next: () => {
+          this.posts = this.posts.filter((item) => item.id !== post.id);
+          this.toast.success('Publicacao eliminada com sucesso.');
+        },
+        error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar a publicacao.'))
+      });
     });
   }
 
@@ -224,9 +237,10 @@ export class PerfilComponent implements OnInit {
           this.loadPosts(this.user!.id, 1);
         }
         this.isFollowLoading = false;
+        this.toast.success(this.followStatus === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
       },
       error: (error) => {
-        console.error('Error following user', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.'));
         this.isFollowLoading = false;
       }
     });
@@ -246,9 +260,10 @@ export class PerfilComponent implements OnInit {
           this.followersCount = Math.max(0, this.followersCount - 1);
         }
         this.isFollowLoading = false;
+        this.toast.success('Deixaste de seguir este utilizador.');
       },
       error: (error) => {
-        console.error('Error unfollowing user', error);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel deixar de seguir este utilizador.'));
         this.isFollowLoading = false;
       }
     });
@@ -259,15 +274,19 @@ export class PerfilComponent implements OnInit {
       next: () => {
         this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
         this.followersCount += 1;
+        this.toast.success('Pedido aceite com sucesso.');
       },
-      error: (error) => console.error('Error accepting follow request', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'))
     });
   }
 
   rejectRequest(request: User): void {
     this.userService.rejectFollowRequest(request.id).subscribe({
-      next: () => this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id),
-      error: (error) => console.error('Error rejecting follow request', error)
+      next: () => {
+        this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+        this.toast.success('Pedido rejeitado.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'))
     });
   }
 
@@ -278,7 +297,7 @@ export class PerfilComponent implements OnInit {
   private loadPendingRequests(): void {
     this.userService.getFollowRequests().subscribe({
       next: (requests) => this.pendingRequests = requests,
-      error: (error) => console.error('Error loading follow requests', error)
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar pedidos para seguir.'))
     });
   }
 

@@ -28,7 +28,6 @@ class UserRepository implements IUserRepository
     {
         return User::query()
             ->where('name', 'like', "%{$term}%")
-            ->orWhere('email', 'like', "%{$term}%")
             ->orderBy('name')
             ->limit(20)
             ->get();
@@ -86,7 +85,7 @@ class UserRepository implements IUserRepository
 
     public function updateCover(string $id, string $coverUrl): User
     {
-        // Cover saved as public URL.
+        // Capa fica salva como URL publica.
         $user = User::findOrFail($id);
         $user->update(['cover_url' => $coverUrl]);
 

@@ -90,10 +90,10 @@ class BazeService implements IBazeService
         event(new FeedUpdated('comment_baze.created', (int) $comment->post_id, (int) $userId));
 
         return [
-            'id'         => $baze->id,
-            'comment_id' => $baze->comment_id,
-            'user_id'    => $baze->user_id,
-            'created_at' => $baze->created_at->toDateTimeString(),
+            'id'         => (int) $baze->id,
+            'comment_id' => (int) $baze->comment_id,
+            'user_id'    => (int) $baze->user_id,
+            'created_at' => $baze->created_at?->toDateTimeString() ?? '',
         ];
     }
 

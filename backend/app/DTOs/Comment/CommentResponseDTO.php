@@ -29,17 +29,17 @@ class CommentResponseDTO
             ->exists();
 
         return new self(
-            id: $comment->id,
-            post_id: $comment->post_id,
-            user_id: $comment->user_id,
-            author_name: $comment->user->name,
-            author_avatar: $comment->user->avatar_url,
-            body: $comment->body,
+            id: (int) $comment->id,
+            post_id: (int) $comment->post_id,
+            user_id: (int) $comment->user_id,
+            author_name: $comment->user?->name ?? 'Utilizador removido',
+            author_avatar: $comment->user?->avatar_url,
+            body: (string) ($comment->body ?? ''),
             can_edit: $isAuthor,
             can_delete: $isAuthor || $isAdmin,
-            bazes_count: $comment->bazes_count ?? $comment->bazes()->count(),
+            bazes_count: (int) ($comment->bazes_count ?? $comment->bazes()->count()),
             has_bazed: $hasBazed,
-            created_at: $comment->created_at->toDateTimeString(),
+            created_at: $comment->created_at?->toDateTimeString() ?? '',
         );
     }
 

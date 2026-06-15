@@ -18,6 +18,7 @@ class NotificationRepository implements INotificationRepository
             'type'       => $type,
             'related_id' => $relatedId,
             'post_id'    => $postId,
+            'read'       => false,
         ]);
 
         event(new NotificationCreated($notification));
@@ -52,7 +53,10 @@ class NotificationRepository implements INotificationRepository
     {
         // Atualiza apenas notificacoes ainda nao lidas do utilizador.
         return Notification::where('user_id', $userId)
-            ->where('read', false)
+            ->where(function ($query) {
+                $query->where('read', false)
+                    ->orWhereNull('read');
+            })
             ->update(['read' => true]);
     }
 
