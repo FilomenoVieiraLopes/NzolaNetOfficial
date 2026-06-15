@@ -90,7 +90,7 @@ class User extends Authenticatable
 
     public function sendPasswordResetNotification($token): void
     {
-        $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://127.0.0.1:4200'), '/');
+        $frontendUrl = rtrim((string) config('app.frontend_url', 'http://localhost:4200'), '/');
         $resetUrl = URL::query($frontendUrl . '/resetar-senha', [
             'token' => $token,
             'email' => $this->email,

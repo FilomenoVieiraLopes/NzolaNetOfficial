@@ -88,6 +88,26 @@
         </div>
       </section>
 
+      <section>
+        <h3 class="font-display text-label-sm uppercase tracking-widest text-red-500 mb-stack-sm px-2">Zona de perigo</h3>
+        <div class="bg-surface-container-lowest dark:bg-slate-800 rounded-xl shadow-[0_4px_20px_rgba(15,23,42,0.05)] overflow-hidden border border-red-200 dark:border-red-900/50">
+          <div class="p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center text-red-600 flex-shrink-0">
+                <span class="material-symbols-outlined">delete_forever</span>
+              </div>
+              <div>
+                <p class="font-display text-body-md font-semibold text-on-surface dark:text-white">Apagar conta</p>
+                <p class="text-label-sm text-secondary dark:text-slate-400">Remove o perfil, publicacoes, comentarios, bazes e relacoes desta conta.</p>
+              </div>
+            </div>
+            <button (click)="deleteAccount()" [disabled]="isDeletingAccount" class="px-5 py-2.5 rounded-full bg-red-600 text-white text-label-sm font-bold hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+              {{ isDeletingAccount ? 'A apagar...' : 'Apagar conta' }}
+            </button>
+          </div>
+        </div>
+      </section>
+
       <div class="pt-stack-lg">
         <button (click)="logout()" class="w-full py-4 text-red-500 font-display font-bold hover:bg-red-500 hover:text-white rounded-xl transition-all duration-300 border border-red-200 hover:border-red-500 hover:shadow-[0_8px_20px_-4px_rgba(239,68,68,0.4)]">
           Terminar sessao

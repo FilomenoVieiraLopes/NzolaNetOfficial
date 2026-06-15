@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/follow-requests/{followerId}', [UserController::class, 'rejectFollowRequest']);
     Route::get('/users/{id}', [UserController::class, 'show']);
     Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
     Route::post('/users/{id}/avatar', [UserController::class, 'updateAvatar']);
     Route::post('/users/{id}/cover', [UserController::class, 'updateCover']);
     Route::post('/users/{id}/follow', [UserController::class, 'follow']);

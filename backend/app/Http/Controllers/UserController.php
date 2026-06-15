@@ -153,6 +153,30 @@ class UserController extends Controller
         }
     }
 
+    // DELETE /api/users/{id}
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        // A conta so pode ser apagada pelo proprio dono autenticado.
+        if ((int) $request->user()->id !== (int) $id) {
+            return response()->json([
+                'message' => 'Sem permissao para apagar esta conta.',
+            ], 403);
+        }
+
+        try {
+            $this->userService->delete($id);
+
+            return response()->json([
+                'message' => 'Conta apagada com sucesso.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
+
     // POST /api/users/{id}/follow
     public function follow(Request $request, string $id): JsonResponse
     {

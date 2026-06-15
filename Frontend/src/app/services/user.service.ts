@@ -48,6 +48,10 @@ export class UserService {
     return this.http.post<{ message: string; cover_url: string; user?: User }>(`${API_BASE_URL}/users/${id}/cover`, formData);
   }
 
+  deleteUser(id: number | string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${API_BASE_URL}/users/${id}`);
+  }
+
   follow(id: number | string): Observable<{ message: string; status?: string }> {
     return this.http.post<{ message: string; status?: string }>(`${API_BASE_URL}/users/${id}/follow`, {});
   }

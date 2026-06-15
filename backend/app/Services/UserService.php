@@ -89,6 +89,19 @@ class UserService implements IUserService
         return UserResponseDTO::fromModel($user, includeEmail: true);
     }
 
+    public function delete(string $id): void
+    {
+        $user = $this->userRepository->findById($id);
+
+        if (!$user) {
+            throw new \Exception('Utilizador nao encontrado.', 404);
+        }
+
+        // Antes de apagar a conta, revogamos tokens para terminar sessoes abertas.
+        $user->tokens()->delete();
+        $this->userRepository->delete($id);
+    }
+
     public function follow(string $followerId, string $followingId): string
     {
         // Ninguem pode seguir a si mesmo.

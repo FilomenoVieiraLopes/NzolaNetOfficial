@@ -57,6 +57,37 @@ class ProfileApiTest extends ApiTestCase
         ])->assertForbidden();
     }
 
+    public function test_user_can_delete_own_account(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::create([
+            'user_id' => $user->id,
+            'content' => 'Publicacao que deve ser apagada com a conta',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->deleteJson("/api/users/{$user->id}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Conta apagada com sucesso.');
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+    }
+
+    public function test_user_cannot_delete_another_user_account(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        Sanctum::actingAs($other);
+
+        $this->deleteJson("/api/users/{$owner->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('users', ['id' => $owner->id]);
+    }
+
     public function test_private_profile_shows_basic_info_until_follow_request_is_accepted(): void
     {
         $owner = User::factory()->create(['privacy' => 'private']);
