@@ -152,6 +152,77 @@ class InteractionApiTest extends ApiTestCase
         ]);
     }
 
+    public function test_user_can_reply_to_comment_and_notify_comment_owner(): void
+    {
+        $postOwner = User::factory()->create();
+        $commentOwner = User::factory()->create();
+        $actor = User::factory()->create();
+        $post = Post::create([
+            'user_id' => $postOwner->id,
+            'content' => 'Publicacao com respostas',
+        ]);
+        $comment = Comment::create([
+            'post_id' => $post->id,
+            'user_id' => $commentOwner->id,
+            'body' => 'Comentario original',
+        ]);
+
+        Sanctum::actingAs($actor);
+
+        $this->postJson("/api/posts/{$post->id}/comments", [
+            'body' => 'Resposta ao comentario',
+            'parent_id' => $comment->id,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('comment.parent_id', $comment->id)
+            ->assertJsonPath('comment.parent_author_name', $commentOwner->name);
+
+        $this->assertDatabaseHas('comments', [
+            'post_id' => $post->id,
+            'user_id' => $actor->id,
+            'parent_id' => $comment->id,
+            'body' => 'Resposta ao comentario',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $commentOwner->id,
+            'actor_id' => $actor->id,
+            'type' => 'comment_reply',
+            'post_id' => $post->id,
+            'read' => false,
+        ]);
+    }
+
+    public function test_user_cannot_reply_to_comment_from_another_post(): void
+    {
+        $user = User::factory()->create();
+        $firstPost = Post::create([
+            'user_id' => $user->id,
+            'content' => 'Primeira publicacao',
+        ]);
+        $secondPost = Post::create([
+            'user_id' => $user->id,
+            'content' => 'Segunda publicacao',
+        ]);
+        $comment = Comment::create([
+            'post_id' => $firstPost->id,
+            'user_id' => $user->id,
+            'body' => 'Comentario de outro post',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/posts/{$secondPost->id}/comments", [
+            'body' => 'Resposta invalida',
+            'parent_id' => $comment->id,
+        ])->assertUnprocessable();
+
+        $this->assertDatabaseMissing('comments', [
+            'post_id' => $secondPost->id,
+            'parent_id' => $comment->id,
+        ]);
+    }
+
     public function test_comments_for_missing_post_return_not_found(): void
     {
         Sanctum::actingAs(User::factory()->create());

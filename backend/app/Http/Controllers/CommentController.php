@@ -41,6 +41,7 @@ class CommentController extends Controller
         // O frontend envia so o texto; post_id vem da rota e user_id do token.
         $validated = $request->validate([
             'body' => 'required|string|max:1000',
+            'parent_id' => 'nullable|integer|exists:comments,id',
         ]);
 
         $validated['post_id'] = $postId;

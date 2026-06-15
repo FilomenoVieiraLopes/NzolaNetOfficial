@@ -13,7 +13,7 @@ class CommentRepository implements ICommentRepository
     public function findById(string $id): ?Comment
     {
         // Carrega autor para montar DTO e verificar regras no service.
-        return Comment::with('user')
+        return Comment::with(['user', 'parent.user'])
             ->withCount('bazes')
             ->find($id);
     }
@@ -23,10 +23,11 @@ class CommentRepository implements ICommentRepository
         $comment = Comment::create([
             'post_id' => $dto->post_id,
             'user_id' => $dto->user_id,
+            'parent_id' => $dto->parent_id,
             'body'    => $dto->body,
         ]);
 
-        return $comment->load('user')->loadCount('bazes');
+        return $comment->load(['user', 'parent.user'])->loadCount('bazes');
     }
 
     public function update(string $id, UpdateCommentDTO $dto): Comment
@@ -34,7 +35,7 @@ class CommentRepository implements ICommentRepository
         $comment = Comment::findOrFail($id);
         $comment->update(['body' => $dto->body]);
 
-        return $comment->fresh()->load('user')->loadCount('bazes');
+        return $comment->fresh()->load(['user', 'parent.user'])->loadCount('bazes');
     }
 
     public function delete(string $id): bool
@@ -45,7 +46,7 @@ class CommentRepository implements ICommentRepository
     public function getByPost(string $postId): Collection
     {
         // Comentarios aparecem do mais antigo para o mais recente.
-        return Comment::with('user')
+        return Comment::with(['user', 'parent.user'])
             ->withCount('bazes')
             ->where('post_id', $postId)
             ->orderBy('created_at', 'asc')

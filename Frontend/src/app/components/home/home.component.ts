@@ -48,6 +48,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   openCommentPostIds = new Set<number>();
   loadingComments: Record<number, boolean> = {};
   commentDrafts: Record<number, string> = {};
+  replyDrafts: Record<number, string> = {};
+  replyingToCommentId: number | null = null;
   editingCommentId: number | null = null;
   editCommentText = '';
   openCommentMenuId: number | null = null;
@@ -243,6 +245,40 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  topLevelComments(post: Post): Comment[] {
+    return (post.comments || []).filter((comment) => !comment.parent_id);
+  }
+
+  commentReplies(post: Post, comment: Comment): Comment[] {
+    return (post.comments || []).filter((reply) => Number(reply.parent_id) === Number(comment.id));
+  }
+
+  startReply(comment: Comment): void {
+    this.replyingToCommentId = comment.id;
+    this.replyDrafts[comment.id] = this.replyDrafts[comment.id] || '';
+    this.openCommentMenuId = null;
+  }
+
+  cancelReply(): void {
+    this.replyingToCommentId = null;
+  }
+
+  submitReply(post: Post, comment: Comment): void {
+    const body = (this.replyDrafts[comment.id] || '').trim();
+    if (!body) return;
+
+    this.feedService.addComment(post.id, body, comment.id).subscribe({
+      next: (response) => {
+        post.comments = [...(post.comments || []), response.data];
+        post.comments_count += 1;
+        this.replyDrafts[comment.id] = '';
+        this.replyingToCommentId = null;
+        this.toast.success('Resposta publicada com sucesso.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar a resposta.'))
+    });
+  }
+
   canEditComment(comment: Comment): boolean {
     return !!comment.can_edit || Number(comment.user_id) === Number(this.currentUser?.id);
   }
@@ -295,8 +331,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       this.feedService.deleteComment(comment.id).subscribe({
         next: () => {
-          post.comments = (post.comments || []).filter((item) => item.id !== comment.id);
-          post.comments_count = Math.max(0, post.comments_count - 1);
+          const removedCount = (post.comments || []).filter((item) => item.id === comment.id || item.parent_id === comment.id).length;
+          post.comments = (post.comments || []).filter((item) => item.id !== comment.id && item.parent_id !== comment.id);
+          post.comments_count = Math.max(0, post.comments_count - removedCount);
           this.toast.success('Comentario eliminado com sucesso.');
         },
         error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar o comentario.'))
@@ -470,6 +507,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       comment: 'comentou na sua publicacao',
       baze: 'deu baze na sua publicacao',
       comment_baze: 'deu baze no seu comentario',
+      comment_reply: 'respondeu ao seu comentario',
       follow: 'comecou a seguir voce',
       follow_request: 'pediu para seguir voce',
       follow_accepted: 'aceitou o seu pedido para seguir'

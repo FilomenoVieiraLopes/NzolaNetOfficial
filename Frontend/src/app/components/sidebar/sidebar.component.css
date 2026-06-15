@@ -1,0 +1,14 @@
+.nav-link.active-link {
+  background: var(--color-primary, #0052d9);
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 8px 18px -8px rgba(0, 82, 217, 0.65);
+}
+
+.nav-link.active-link .material-symbols-outlined {
+  color: #ffffff !important;
+}
+
+.nav-link.active-link:hover {
+  background: var(--color-primary, #0052d9);
+}

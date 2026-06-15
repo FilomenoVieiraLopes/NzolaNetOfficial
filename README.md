@@ -72,7 +72,7 @@ composer run dev
 Se preferir controlar cada processo separadamente:
 
 ```bash
-php artisan serve
+php -d upload_max_filesize=64M -d post_max_size=64M -d memory_limit=256M artisan serve
 ```
 
 3. Preparar e executar o frontend:

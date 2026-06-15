@@ -103,6 +103,14 @@ composer run dev
 
 Esse comando sobe o servidor HTTP da API.
 
+Para upload de videos, use esse comando ou suba o servidor com limites PHP maiores:
+
+```bash
+php -d upload_max_filesize=64M -d post_max_size=64M -d memory_limit=256M artisan serve
+```
+
+O Laravel valida videos ate 50MB, mas o PHP precisa permitir requests acima desse tamanho antes da validacao da API.
+
 ## Autenticacao
 
 Depois de login ou registo, a API devolve um token Sanctum:

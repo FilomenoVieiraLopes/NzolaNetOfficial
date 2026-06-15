@@ -15,6 +15,7 @@ class Comment extends Model
     protected $fillable = [
         'post_id',
         'user_id',
+        'parent_id',
         'body',
     ];
 
@@ -33,5 +34,17 @@ class Comment extends Model
     public function bazes(): HasMany
     {
         return $this->hasMany(CommentBaze::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        // Comentario principal ao qual esta resposta pertence.
+        return $this->belongsTo(Comment::class, 'parent_id');
+    }
+
+    public function replies(): HasMany
+    {
+        // Respostas diretas deste comentario.
+        return $this->hasMany(Comment::class, 'parent_id');
     }
 }

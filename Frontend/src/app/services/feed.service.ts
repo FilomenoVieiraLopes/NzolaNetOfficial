@@ -173,8 +173,11 @@ export class FeedService {
     );
   }
 
-  addComment(postId: number, body: string): Observable<ApiResponse<Comment>> {
-    return this.http.post<CommentCreateResponse>(`${API_BASE_URL}/posts/${postId}/comments`, { body }).pipe(
+  addComment(postId: number, body: string, parentId?: number): Observable<ApiResponse<Comment>> {
+    const payload: { body: string; parent_id?: number } = { body };
+    if (parentId) payload.parent_id = parentId;
+
+    return this.http.post<CommentCreateResponse>(`${API_BASE_URL}/posts/${postId}/comments`, payload).pipe(
       map((response) => ({
         status: 'success' as const,
         data: response.comment,

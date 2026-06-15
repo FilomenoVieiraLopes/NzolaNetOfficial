@@ -42,10 +42,39 @@ class CommentService implements ICommentService
             throw new \Exception('Publicacao nao encontrada.', 404);
         }
 
+        $parentComment = null;
+
+        if ($dto->parent_id) {
+            $parentComment = $this->commentRepository->findById((string) $dto->parent_id);
+
+            if (!$parentComment || (int) $parentComment->post_id !== (int) $dto->post_id) {
+                throw new \Exception('Comentario original invalido para esta publicacao.', 422);
+            }
+
+            if ($parentComment->parent_id) {
+                // Mantemos apenas um nivel de respostas para a tela ficar simples.
+                $dto = new CreateCommentDTO(
+                    post_id: $dto->post_id,
+                    user_id: $dto->user_id,
+                    body: $dto->body,
+                    parent_id: (int) $parentComment->parent_id
+                );
+                $parentComment = $this->commentRepository->findById((string) $parentComment->parent_id);
+            }
+        }
+
         $comment = $this->commentRepository->create($dto);
 
-        // Notifica o autor do post quando outra pessoa comenta.
-        if ((int) $post->user_id !== (int) $dto->user_id) {
+        // Resposta notifica o autor do comentario respondido; comentario normal notifica o autor do post.
+        if ($parentComment && (int) $parentComment->user_id !== (int) $dto->user_id) {
+            $this->notificationRepository->create(
+                $parentComment->user_id,
+                'comment_reply',
+                $comment->id,
+                (string) $dto->user_id,
+                (string) $dto->post_id
+            );
+        } elseif (!$parentComment && (int) $post->user_id !== (int) $dto->user_id) {
             $this->notificationRepository->create(
                 $post->user_id,
                 'comment',

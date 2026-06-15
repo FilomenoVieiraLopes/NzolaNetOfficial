@@ -131,6 +131,7 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
       comment: 'comentou na sua publicacao',
       baze: 'deu baze na sua publicacao',
       comment_baze: 'deu baze no seu comentario',
+      comment_reply: 'respondeu ao seu comentario',
       follow: 'comecou a seguir voce',
       follow_request: 'pediu para seguir voce',
       follow_accepted: 'aceitou o seu pedido para seguir'

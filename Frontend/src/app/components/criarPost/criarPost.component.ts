@@ -61,6 +61,19 @@ export class CriarPostComponent {
     if (!file) return;
 
     this.selectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
+    const maxSize = this.selectedMediaType === 'video'
+      ? 50 * 1024 * 1024
+      : 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      this.toast.warning(this.selectedMediaType === 'video'
+        ? 'O video deve ter no maximo 50MB.'
+        : 'A imagem deve ter no maximo 5MB.');
+      input.value = '';
+      this.selectedMediaType = null;
+      return;
+    }
+
     this.selectedFile = file;
 
     const reader = new FileReader();

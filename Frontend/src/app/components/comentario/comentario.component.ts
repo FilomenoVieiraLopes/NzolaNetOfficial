@@ -26,6 +26,8 @@ export class ComentarioComponent implements OnInit {
   currentUser = this.authService.getCurrentUser();
   editingCommentId: number | null = null;
   editCommentText = '';
+  replyDrafts: Record<number, string> = {};
+  replyingToCommentId: number | null = null;
   private pendingPostBaze = false;
   private pendingCommentBazeIds = new Set<number>();
 
@@ -69,6 +71,40 @@ export class ComentarioComponent implements OnInit {
         });
       },
       error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar o comentario.'))
+    });
+  }
+
+  topLevelComments(): Comment[] {
+    return (this.post?.comments || []).filter((comment) => !comment.parent_id);
+  }
+
+  commentReplies(comment: Comment): Comment[] {
+    return (this.post?.comments || []).filter((reply) => Number(reply.parent_id) === Number(comment.id));
+  }
+
+  startReply(comment: Comment): void {
+    this.replyingToCommentId = comment.id;
+    this.replyDrafts[comment.id] = this.replyDrafts[comment.id] || '';
+  }
+
+  cancelReply(): void {
+    this.replyingToCommentId = null;
+  }
+
+  submitReply(comment: Comment): void {
+    const body = (this.replyDrafts[comment.id] || '').trim();
+    if (!body || !this.post) return;
+
+    this.feedService.addComment(this.post.id, body, comment.id).subscribe({
+      next: (response) => {
+        if (!this.post) return;
+        this.post.comments = [...(this.post.comments || []), response.data];
+        this.post.comments_count += 1;
+        this.replyDrafts[comment.id] = '';
+        this.replyingToCommentId = null;
+        this.toast.success('Resposta publicada com sucesso.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar a resposta.'))
     });
   }
 
@@ -161,8 +197,9 @@ export class ComentarioComponent implements OnInit {
       this.feedService.deleteComment(comment.id).subscribe({
         next: () => {
           if (this.post?.comments) {
-            this.post.comments = this.post.comments.filter((item) => item.id !== comment.id);
-            this.post.comments_count = Math.max(0, this.post.comments_count - 1);
+            const removedCount = this.post.comments.filter((item) => item.id === comment.id || item.parent_id === comment.id).length;
+            this.post.comments = this.post.comments.filter((item) => item.id !== comment.id && item.parent_id !== comment.id);
+            this.post.comments_count = Math.max(0, this.post.comments_count - removedCount);
           }
           this.toast.success('Comentario eliminado com sucesso.');
         },
