@@ -39,6 +39,8 @@ export class PerfilComponent implements OnInit {
   followStatus: string | null = null;
   isFollowLoading = false;
   pendingRequests: User[] = [];
+  processingRequestIds = new Set<number>();
+  hasPendingRequestFromProfile = false;
   editingPostId: number | null = null;
   editPostContent = '';
 
@@ -70,6 +72,8 @@ export class PerfilComponent implements OnInit {
     this.isFollowing = false;
     this.followStatus = null;
     this.pendingRequests = [];
+    this.processingRequestIds.clear();
+    this.hasPendingRequestFromProfile = false;
 
     this.userService.getUser(userId).subscribe({
       next: (user) => {
@@ -81,6 +85,7 @@ export class PerfilComponent implements OnInit {
         this.followingCount = user.following_count ?? 0;
         if (this.isOwnProfile) this.authService.setCurrentUser(user);
         if (this.isOwnProfile) this.loadPendingRequests();
+        if (!this.isOwnProfile) this.checkPendingRequestFromProfile(user.id);
 
         if (this.canViewPrivateContent()) {
           this.loadProfileStats(user.id);
@@ -270,23 +275,51 @@ export class PerfilComponent implements OnInit {
   }
 
   acceptRequest(request: User): void {
+    if (this.processingRequestIds.has(request.id)) return;
+
+    this.processingRequestIds.add(request.id);
     this.userService.acceptFollowRequest(request.id).subscribe({
       next: () => {
         this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
         this.followersCount += 1;
+        this.processingRequestIds.delete(request.id);
+        this.loadPendingRequests(false);
         this.toast.success('Pedido aceite com sucesso.');
       },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'))
+      error: (error) => {
+        this.processingRequestIds.delete(request.id);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'));
+      }
     });
   }
 
+  acceptProfileRequest(): void {
+    if (!this.user) return;
+
+    this.acceptRequest(this.user);
+  }
+
+  rejectProfileRequest(): void {
+    if (!this.user) return;
+
+    this.rejectRequest(this.user);
+  }
+
   rejectRequest(request: User): void {
+    if (this.processingRequestIds.has(request.id)) return;
+
+    this.processingRequestIds.add(request.id);
     this.userService.rejectFollowRequest(request.id).subscribe({
       next: () => {
         this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+        this.processingRequestIds.delete(request.id);
+        this.loadPendingRequests(false);
         this.toast.success('Pedido rejeitado.');
       },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'))
+      error: (error) => {
+        this.processingRequestIds.delete(request.id);
+        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'));
+      }
     });
   }
 
@@ -294,10 +327,23 @@ export class PerfilComponent implements OnInit {
     return !!this.user?.can_view_private_content;
   }
 
-  private loadPendingRequests(): void {
+  private loadPendingRequests(showError = true): void {
     this.userService.getFollowRequests().subscribe({
       next: (requests) => this.pendingRequests = requests,
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar pedidos para seguir.'))
+      error: (error) => {
+        if (showError) this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar pedidos para seguir.'));
+      }
+    });
+  }
+
+  private checkPendingRequestFromProfile(profileUserId: number): void {
+    this.userService.getFollowRequests().subscribe({
+      next: (requests) => {
+        this.hasPendingRequestFromProfile = requests.some((request) => Number(request.id) === Number(profileUserId));
+      },
+      error: () => {
+        this.hasPendingRequestFromProfile = false;
+      }
     });
   }
 

@@ -89,6 +89,17 @@ class BazeService implements IBazeService
         $baze = $this->bazeRepository->createForComment($commentId, $userId);
         event(new FeedUpdated('comment_baze.created', (int) $comment->post_id, (int) $userId));
 
+        // Notifica o autor do comentario quando outra pessoa reage ao comentario.
+        if ((int) $comment->user_id !== (int) $userId) {
+            $this->notificationRepository->create(
+                (string) $comment->user_id,
+                'comment_baze',
+                $commentId,
+                $userId,
+                (string) $comment->post_id
+            );
+        }
+
         return [
             'id'         => (int) $baze->id,
             'comment_id' => (int) $baze->comment_id,

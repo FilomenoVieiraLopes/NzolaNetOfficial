@@ -29,7 +29,7 @@ export class ComentarioComponent implements OnInit {
   private pendingPostBaze = false;
   private pendingCommentBazeIds = new Set<number>();
 
-  ngOnInit() {
+  ngOnInit() {                
     const postId = history.state?.postId;
 
     if (postId) {

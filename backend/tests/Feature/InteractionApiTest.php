@@ -122,6 +122,36 @@ class InteractionApiTest extends ApiTestCase
         ]);
     }
 
+    public function test_baze_on_comment_creates_notification_for_comment_owner(): void
+    {
+        $postOwner = User::factory()->create();
+        $commentOwner = User::factory()->create();
+        $actor = User::factory()->create();
+        $post = Post::create([
+            'user_id' => $postOwner->id,
+            'content' => 'Publicacao com comentario que recebe baze',
+        ]);
+        $comment = Comment::create([
+            'post_id' => $post->id,
+            'user_id' => $commentOwner->id,
+            'body' => 'Comentario com baze',
+        ]);
+
+        Sanctum::actingAs($actor);
+
+        $this->postJson("/api/comments/{$comment->id}/bazes")
+            ->assertCreated();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $commentOwner->id,
+            'actor_id' => $actor->id,
+            'type' => 'comment_baze',
+            'related_id' => $comment->id,
+            'post_id' => $post->id,
+            'read' => false,
+        ]);
+    }
+
     public function test_comments_for_missing_post_return_not_found(): void
     {
         Sanctum::actingAs(User::factory()->create());

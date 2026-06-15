@@ -68,6 +68,22 @@ class AuthApiTest extends ApiTestCase
         ])->assertUnauthorized();
     }
 
+    public function test_expired_token_is_rejected(): void
+    {
+        config(['sanctum.expiration' => 120]);
+
+        $user = User::factory()->create();
+        $token = $user->createToken('expired_token');
+        $token->accessToken->forceFill([
+            'created_at' => now()->subMinutes(121),
+            'updated_at' => now()->subMinutes(121),
+        ])->save();
+
+        $this->withHeader('Authorization', 'Bearer ' . $token->plainTextToken)
+            ->getJson('/api/posts')
+            ->assertUnauthorized();
+    }
+
     public function test_logout_revokes_current_user_tokens(): void
     {
         $user = User::factory()->create();

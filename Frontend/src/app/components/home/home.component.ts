@@ -99,7 +99,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.posts = this.mergePosts(response.data);
         this.applyPagination(response.meta);
-        this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
+        this.openAndLoadComments(this.posts);
         this.isLoading = false;
         this.focusTargetPost();
       },
@@ -124,7 +124,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.posts = this.mergePosts([...this.posts, ...response.data]);
         this.applyPagination(response.meta);
-        this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
+        this.openAndLoadComments(response.data);
         this.isLoadingMore = false;
       },
       error: (error) => {
@@ -430,10 +430,49 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  acceptFollowRequestFromNotification(notification: Notification, event: Event): void {
+    event.stopPropagation();
+
+    if (!notification.actor_id) {
+      this.toast.error('Nao foi possivel identificar quem fez o pedido.');
+      return;
+    }
+
+    this.userService.acceptFollowRequest(notification.actor_id).subscribe({
+      next: () => {
+        notification.read = true;
+        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+        this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
+        this.toast.success('Pedido aceite com sucesso.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'))
+    });
+  }
+
+  rejectFollowRequestFromNotification(notification: Notification, event: Event): void {
+    event.stopPropagation();
+
+    if (!notification.actor_id) {
+      this.toast.error('Nao foi possivel identificar quem fez o pedido.');
+      return;
+    }
+
+    this.userService.rejectFollowRequest(notification.actor_id).subscribe({
+      next: () => {
+        notification.read = true;
+        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+        this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
+        this.toast.success('Pedido rejeitado.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'))
+    });
+  }
+
   labelForNotification(type: string): string {
     const labels: Record<string, string> = {
       comment: 'comentou na sua publicacao',
       baze: 'deu baze na sua publicacao',
+      comment_baze: 'deu baze no seu comentario',
       follow: 'comecou a seguir voce',
       follow_request: 'pediu para seguir voce',
       follow_accepted: 'aceitou o seu pedido para seguir'
@@ -509,7 +548,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         const latestResponse = responses[responses.length - 1];
         this.posts = this.mergePosts(responses.flatMap((response) => response.data));
         this.applyPagination(latestResponse?.meta);
-        this.posts.forEach((post) => this.openCommentPostIds.add(post.id));
+        this.openAndLoadComments(this.posts);
       },
       error: () => {}
     });
@@ -561,6 +600,16 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  private openAndLoadComments(posts: Post[]): void {
+    posts.forEach((post) => {
+      this.openCommentPostIds.add(post.id);
+
+      if (!post.comments && !this.loadingComments[post.id]) {
+        this.loadComments(post);
+      }
+    });
+  }
+
   private applyPagination(meta = {
     current_page: 1,
     last_page: 1,
@@ -576,6 +625,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     const post = this.posts.find((item) => item.id === this.targetPostId);
     if (post) {
       this.openCommentPostIds.add(post.id);
+      if (!post.comments) {
+        this.loadComments(post);
+      }
     }
 
     setTimeout(() => {

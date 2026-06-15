@@ -1,63 +1,71 @@
 # NzolaNet API
 
-NzolaNet e uma API Laravel para uma rede social academica. A aplicacao permite registo e autenticacao de utilizadores, gestao de perfis, publicacoes com texto/imagem/video, comentarios, bazes, feed de noticias, seguidores e notificacoes.
-
-Este repositorio contem o backend. O frontend Angular deve consumir os endpoints documentados em [docs/API.md](docs/API.md) e seguir o guia de integracao em [docs/ANGULAR.md](docs/ANGULAR.md).
-
-## Documentacao
-
-- [Arquitetura e requisitos](docs/ARCHITECTURE.md)
-- [Endpoints da API](docs/API.md)
-- [Guia para ligar com Angular](docs/ANGULAR.md)
+Backend Laravel da rede social NzolaNet. A API concentra autenticacao, regras de negocio, persistencia, uploads, notificacoes, feed e eventos em tempo real.
 
 ## Stack tecnica
 
 - PHP 8.3+
-- Laravel 13
+- Laravel
 - Laravel Sanctum para autenticacao por token
-- MySQL, PostgreSQL ou outro banco suportado pelo Laravel
-- Vite apenas para assets base do Laravel
+- Laravel Reverb para WebSockets
+- MySQL
+- Eloquent ORM
+- Arquitetura em camadas com Controllers, DTOs, Services, Repositories e Interfaces
 
-## Funcionalidades principais
+## Funcionalidades
 
-- Registo, login, logout e recuperacao de senha.
-- Edicao de perfil, avatar e privacidade (`public` ou `private`).
-- Seguir e deixar de seguir utilizadores.
-- Criar, listar, editar e apagar publicacoes proprias.
-- Upload de imagem e video em publicacoes.
-- Dar/remover bazes em publicacoes.
-- Criar, listar, editar e apagar comentarios.
-- Moderacao: utilizador `admin` pode apagar comentarios de outros utilizadores.
-- Feed principal e feed de utilizadores seguidos.
-- Notificacoes para follow, baze e comentario.
+- Autenticacao: registo, login, logout e recuperacao de senha.
+- Utilizadores: perfil, avatar, capa, bio, privacidade e pesquisa.
+- Privacidade: perfis publicos permitem seguir na hora; perfis privados exigem pedido pendente e aceitacao.
+- Seguidores: seguir, deixar de seguir, aceitar e rejeitar pedidos.
+- Publicacoes: criar, listar, ver detalhe, editar e apagar.
+- Multimidia: upload de imagens e videos.
+- Feed: geral, personalizado por pessoas seguidas e ordenacao cronologica.
+- Bazes: dar/remover em publicacoes e comentarios, impedindo duplicacao.
+- Comentarios: criar, listar, editar e apagar.
+- Notificacoes: geradas para baze, comentario e novo seguidor.
+- Tempo real: eventos de feed e notificacoes via Reverb.
+- Testes: suite Feature cobrindo endpoints principais.
 
-## Instalar localmente
+## Estrutura
 
-1. Instalar dependencias PHP:
+```text
+app/
+  DTOs/              Entrada e saida padronizada da API
+  Events/            Eventos enviados pelo Reverb/WebSockets
+  Http/Controllers/  Recebem requests e devolvem JSON
+  Interfaces/        Contratos de services e repositories
+  Models/            Modelos Eloquent e relacoes
+  Providers/         Bindings de injecao de dependencia
+  Repositories/      Acesso ao banco de dados
+  Services/          Regras de negocio
+database/
+  migrations/        Estrutura das tabelas
+  seeders/           Dados iniciais
+routes/
+  api.php            Endpoints REST
+  channels.php       Autorizacao dos canais privados
+tests/
+  Feature/           Testes dos fluxos principais da API
+```
+
+## Configuracao local
+
+1. Instalar dependencias:
 
 ```bash
 composer install
-```
-
-2. Instalar dependencias Node:
-
-```bash
 npm install
 ```
 
-3. Criar o ficheiro `.env`:
+2. Criar `.env`:
 
 ```bash
 copy .env.example .env
-```
-
-4. Gerar a chave da aplicacao:
-
-```bash
 php artisan key:generate
 ```
 
-5. Configurar o banco no `.env`:
+3. Configurar MySQL:
 
 ```env
 DB_CONNECTION=mysql
@@ -68,33 +76,57 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-6. Executar migrations:
+4. Configurar Reverb no `.env`:
+
+```env
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=nzolanet
+REVERB_APP_KEY=nzolanet-local-key
+REVERB_APP_SECRET=nzolanet-local-secret
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
+```
+
+5. Preparar banco e uploads:
 
 ```bash
 php artisan migrate
-```
-
-7. Criar o link publico para uploads:
-
-```bash
+php artisan db:seed
 php artisan storage:link
 ```
 
-8. Subir o servidor:
+## Executar
+
+Servidor HTTP:
 
 ```bash
 php artisan serve
 ```
 
-Por padrao, a API fica em:
+Reverb/WebSockets:
 
-```text
-http://127.0.0.1:8000/api
+```bash
+php artisan reverb:start --debug
 ```
+
+Fila de eventos:
+
+```bash
+php artisan queue:listen --tries=1 --timeout=0
+```
+
+Tudo em conjunto:
+
+```bash
+composer run dev
+```
+
+Esse comando sobe servidor HTTP, Reverb e fila em paralelo.
 
 ## Autenticacao
 
-Os endpoints protegidos usam token Sanctum. Depois de login ou registo, o backend devolve:
+Depois de login ou registo, a API devolve um token Sanctum:
 
 ```json
 {
@@ -102,42 +134,55 @@ Os endpoints protegidos usam token Sanctum. Depois de login ou registo, o backen
 }
 ```
 
-No Angular, envie esse token nos requests protegidos:
+Todos os endpoints protegidos devem receber:
 
 ```http
 Authorization: Bearer 1|token...
+Accept: application/json
+```
+
+O frontend guarda o token no `localStorage` e o interceptor Angular adiciona o header automaticamente.
+
+## Expiracao dos tokens
+
+Os tokens Sanctum expiram automaticamente conforme o valor:
+
+```env
+SANCTUM_TOKEN_EXPIRATION=120
+```
+
+O valor e definido em minutos. Com `120`, cada token e considerado expirado apos 2 horas desde a criacao. Quando isso acontece, a API devolve `401` e o frontend limpa a sessao local, mostra aviso de sessao expirada e redirecciona para o login.
+
+Se alterar esse valor em ambiente local ou producao, limpe a cache de configuracao:
+
+```bash
+php artisan config:clear
 ```
 
 ## Testes
 
-Executar:
+Os testes usam MySQL. Crie uma base separada para testes, por exemplo:
+
+```sql
+CREATE DATABASE nzolanet_test;
+```
+
+Configure o ambiente de teste conforme o `phpunit.xml` e execute:
 
 ```bash
 php artisan test
 ```
 
-Nota: o `phpunit.xml` usa SQLite em memoria para testes. Se o PHP local nao tiver `pdo_sqlite`/`sqlite3`, a suite falha com `could not find driver`. Nesse caso, instale/ative a extensao SQLite do PHP ou ajuste o ambiente de testes para MySQL.
+## Documentacao complementar
 
-## Estrutura resumida
+- [Arquitetura e requisitos](docs/ARCHITECTURE.md)
+- [Endpoints da API](docs/API.md)
+- [Guia de integracao com Angular](docs/ANGULAR.md)
 
-```text
-app/
-  DTOs/          Objetos de entrada/saida da API
-  Http/Controllers/  Recebem requests e devolvem respostas JSON
-  Interfaces/    Contratos para services e repositories
-  Models/        Modelos Eloquent e relacoes
-  Providers/     Bindings de injecao de dependencia
-  Repositories/  Acesso a base de dados
-  Services/      Regras de negocio
-routes/api.php   Rotas REST da API
-database/migrations/ Estrutura do banco
-tests/Feature/  Testes dos endpoints principais
-```
+## Cuidados
 
-## Observacoes de seguranca
-
-- Nunca subir `.env` para o GitHub.
-- Nunca guardar senhas em texto puro.
-- Tokens devem ser guardados no frontend de forma cuidadosa.
-- Uploads aceitam apenas tipos e tamanhos definidos nos controllers.
-- Perfis privados so podem ser vistos pelo dono ou por seguidores.
+- Nao versionar `.env`.
+- Executar `php artisan storage:link` para imagens e videos carregarem.
+- Garantir que `queue:listen` esta activo para eventos/notificacoes em tempo real.
+- Garantir que `reverb:start` esta activo para notificacoes e feed dinamico.
+- Em producao, ajustar `SANCTUM_TOKEN_EXPIRATION` conforme a politica de seguranca desejada.

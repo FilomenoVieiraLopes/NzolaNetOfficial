@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { RealtimeService } from '../../services/realtime.service';
 import { ToastService } from '../../services/toast.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-notificacao',
@@ -19,6 +20,7 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private realtimeService = inject(RealtimeService);
   private toast = inject(ToastService);
+  private userService = inject(UserService);
   private router = inject(Router);
 
   notifications: Notification[] = [];
@@ -100,10 +102,45 @@ export class NotificacaoComponent implements OnInit, OnDestroy {
     });
   }
 
+  acceptFollowRequest(notification: Notification, event: Event): void {
+    event.stopPropagation();
+
+    if (!notification.actor_id) {
+      this.toast.error('Nao foi possivel identificar quem fez o pedido.');
+      return;
+    }
+
+    this.userService.acceptFollowRequest(notification.actor_id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+        this.toast.success('Pedido aceite com sucesso.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel aceitar o pedido.'))
+    });
+  }
+
+  rejectFollowRequest(notification: Notification, event: Event): void {
+    event.stopPropagation();
+
+    if (!notification.actor_id) {
+      this.toast.error('Nao foi possivel identificar quem fez o pedido.');
+      return;
+    }
+
+    this.userService.rejectFollowRequest(notification.actor_id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+        this.toast.success('Pedido rejeitado.');
+      },
+      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel rejeitar o pedido.'))
+    });
+  }
+
   labelFor(type: string): string {
     const labels: Record<string, string> = {
       comment: 'comentou na sua publicacao',
       baze: 'deu baze na sua publicacao',
+      comment_baze: 'deu baze no seu comentario',
       follow: 'comecou a seguir voce',
       follow_request: 'pediu para seguir voce',
       follow_accepted: 'aceitou o seu pedido para seguir'
