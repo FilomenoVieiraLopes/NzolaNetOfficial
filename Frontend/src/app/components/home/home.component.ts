@@ -3,20 +3,22 @@ import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { Comment } from '../../models/comment.model';
 import { Notification } from '../../models/notification.model';
 import { Post } from '../../models/post.model';
-import { User } from '../../models/user.model';
-import { notificationText } from '../../helpers/notification-text';
+import { HomeNotificationsComponent } from '../home-notifications/home-notifications.component';
+import { HomeSidebarComponent } from '../home-sidebar/home-sidebar.component';
+import { PostCommentsComponent } from '../post-comments/post-comments.component';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 import { NotificationService } from '../../services/notification.service';
 import { ToastService } from '../../services/toast.service';
 import { UserService } from '../../services/user.service';
 
+type FeedMode = 'general' | 'following';
+
 @Component({
   selector: 'app-home',
-  imports: [RouterModule, CommonModule, DatePipe, FormsModule],
+  imports: [RouterModule, CommonModule, DatePipe, FormsModule, HomeNotificationsComponent, HomeSidebarComponent, PostCommentsComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -30,17 +32,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   posts: Post[] = [];
   isLoading = true;
-  feedMode: 'general' | 'following' = 'general';
+  feedMode: FeedMode = 'general';
   currentPage = 1;
   lastPage = 1;
   isLoadingMore = false;
   currentUser = this.authService.getCurrentUser();
-  homeSearchQuery = '';
-  searchResults: User[] = [];
-  isSearching = false;
-  searchError = '';
-  suggestedUsers: User[] = [];
-  isLoadingSuggestions = false;
   notifications: Notification[] = [];
   unreadNotifications = 0;
   showNotifications = false;
@@ -48,29 +44,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   editPostContent = '';
   openCommentPostIds = new Set<number>();
   loadingComments: Record<number, boolean> = {};
-  commentDrafts: Record<number, string> = {};
-  replyDrafts: Record<number, string> = {};
-  replyingToCommentId: number | null = null;
-  editingCommentId: number | null = null;
-  editCommentText = '';
-  openCommentMenuId: number | null = null;
   targetPostId: number | null = null;
   openMenuPostId: number | null = null;
-  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private pollingTimer: ReturnType<typeof setInterval> | null = null;
   private pendingBazePostIds = new Set<number>();
-  private pendingCommentBazeIds = new Set<number>();
 
   ngOnInit(): void {
     this.targetPostId = history.state?.postId ? Number(history.state.postId) : null;
     this.loadFeed('general');
     this.loadNotifications();
-    this.loadSuggestions();
     this.startPolling();
   }
 
   ngOnDestroy(): void {
-    if (this.searchTimer) clearTimeout(this.searchTimer);
     if (this.pollingTimer) clearInterval(this.pollingTimer);
   }
 
@@ -85,7 +71,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadFeed(mode: 'general' | 'following', page = 1): void {
+  loadFeed(mode: FeedMode, page = 1): void {
     this.feedMode = mode;
     this.currentPage = page;
     this.isLoading = true;
@@ -223,179 +209,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.openCommentPostIds.has(post.id);
   }
 
-  submitInlineComment(post: Post): void {
-    const body = (this.commentDrafts[post.id] || '').trim();
-    if (!body) return;
-
-    this.feedService.addComment(post.id, body).subscribe({
-      next: (response) => {
-        this.addCommentToPost(post, response.data);
-        this.commentDrafts[post.id] = '';
-        this.toast.success('Comentario publicado com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar o comentario.'))
-    });
-  }
-
-  topLevelComments(post: Post): Comment[] {
-    return (post.comments || []).filter((comment) => !comment.parent_id);
-  }
-
-  commentReplies(post: Post, comment: Comment): Comment[] {
-    return (post.comments || []).filter((reply) => Number(reply.parent_id) === Number(comment.id));
-  }
-
-  startReply(comment: Comment): void {
-    this.replyingToCommentId = comment.id;
-    this.replyDrafts[comment.id] = this.replyDrafts[comment.id] || '';
-    this.openCommentMenuId = null;
-  }
-
-  cancelReply(): void {
-    this.replyingToCommentId = null;
-  }
-
-  submitReply(post: Post, comment: Comment): void {
-    const body = (this.replyDrafts[comment.id] || '').trim();
-    if (!body) return;
-
-    this.feedService.addComment(post.id, body, comment.id).subscribe({
-      next: (response) => {
-        this.addCommentToPost(post, response.data);
-        this.replyDrafts[comment.id] = '';
-        this.replyingToCommentId = null;
-        this.toast.success('Resposta publicada com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel publicar a resposta.'))
-    });
-  }
-
-  canEditComment(comment: Comment): boolean {
-    return !!comment.can_edit || Number(comment.user_id) === Number(this.currentUser?.id);
-  }
-
-  canDeleteComment(comment: Comment): boolean {
-    return !!comment.can_delete || Number(comment.user_id) === Number(this.currentUser?.id) || this.isAdmin();
-  }
-
-  startEditComment(comment: Comment): void {
-    this.editingCommentId = comment.id;
-    this.editCommentText = comment.body;
-    this.openCommentMenuId = null;
-  }
-
-  toggleCommentMenu(commentId: number): void {
-    this.openCommentMenuId = this.openCommentMenuId === commentId ? null : commentId;
-  }
-
-  closeCommentMenu(): void {
-    this.openCommentMenuId = null;
-  }
-
-  cancelEditComment(): void {
-    this.editingCommentId = null;
-    this.editCommentText = '';
-  }
-
-  saveComment(post: Post, comment: Comment): void {
-    const body = this.editCommentText.trim();
-    if (!body) return;
-
-    this.feedService.updateComment(comment.id, body).subscribe({
-      next: (response) => {
-        post.comments = (post.comments || []).map((item) => item.id === comment.id ? response.data : item);
-        this.cancelEditComment();
-        this.toast.success('Comentario atualizado com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar o comentario.'))
-    });
-  }
-
-  deleteComment(post: Post, comment: Comment): void {
-    this.toast.confirm({
-      title: 'Eliminar comentario',
-      message: 'Deseja eliminar este comentario?',
-      confirmText: 'Eliminar',
-      tone: 'danger',
-    }).subscribe((confirmed) => {
-      if (!confirmed) return;
-
-      this.feedService.deleteComment(comment.id).subscribe({
-        next: () => {
-          this.removeCommentFromPost(post, comment);
-          this.toast.success('Comentario eliminado com sucesso.');
-        },
-        error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar o comentario.'))
-      });
-    });
-  }
-
-  giveCommentBaze(comment: Comment): void {
-    if (this.pendingCommentBazeIds.has(comment.id)) return;
-
-    this.pendingCommentBazeIds.add(comment.id);
-    const request = comment.has_bazed
-      ? this.feedService.removeCommentBaze(comment.id)
-      : this.feedService.giveCommentBaze(comment.id);
-
-    request.subscribe({
-      next: () => {
-        comment.has_bazed = !comment.has_bazed;
-        comment.bazes_count = Math.max(0, (comment.bazes_count || 0) + (comment.has_bazed ? 1 : -1));
-        this.pendingCommentBazeIds.delete(comment.id);
-      },
-      error: (error) => {
-        this.pendingCommentBazeIds.delete(comment.id);
-        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar o baze do comentario.'));
-      }
-    });
-  }
-
-  scheduleHomeSearch(): void {
-    if (this.searchTimer) clearTimeout(this.searchTimer);
-    const term = this.homeSearchQuery.trim();
-
-    if (!term) {
-      this.searchResults = [];
-      this.searchError = '';
-      this.isSearching = false;
-      return;
-    }
-
-    this.searchTimer = setTimeout(() => this.searchUsers(term), 350);
-  }
-
-  clearHomeSearch(): void {
-    this.homeSearchQuery = '';
-    this.searchResults = [];
-    this.searchError = '';
-    this.isSearching = false;
-    if (this.searchTimer) clearTimeout(this.searchTimer);
-  }
-
-  followUser(user: User): void {
-    this.followAndRemoveFromList(user, 'search');
-  }
-
-  followSuggestedUser(user: User): void {
-    this.followAndRemoveFromList(user, 'suggestions');
-  }
-
-  private followAndRemoveFromList(user: User, list: 'search' | 'suggestions'): void {
-    this.userService.follow(user.id).subscribe({
-      next: (response) => {
-        if (list === 'search') {
-          this.searchResults = this.searchResults.filter((item) => item.id !== user.id);
-        } else {
-          this.suggestedUsers = this.suggestedUsers.filter((item) => item.id !== user.id);
-        }
-
-        this.toast.success(response.status === 'pending' ? 'Pedido para seguir enviado.' : 'Utilizador seguido com sucesso.');
-      },
-      error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel seguir este utilizador.'))
-    });
-  }
-
   toggleNotifications(): void {
     this.showNotifications = !this.showNotifications;
     if (this.showNotifications) this.loadNotifications(false);
@@ -413,21 +226,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   openNotification(notification: Notification): void {
-    const finish = () => {
-      this.showNotifications = false;
-      if (notification.post_id) {
-        this.targetPostId = notification.post_id;
-        this.focusTargetPost();
-        this.router.navigate(['/app/home'], { state: { postId: notification.post_id } });
-      } else if (notification.actor_id) {
-        this.router.navigate(['/app/perfil', notification.actor_id]);
-      } else {
-        this.router.navigate(['/app/notificacoes']);
-      }
-    };
-
     if (notification.read) {
-      finish();
+      this.goToNotificationTarget(notification);
       return;
     }
 
@@ -435,9 +235,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: () => {
         notification.read = true;
         this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
-        finish();
+        this.goToNotificationTarget(notification);
       },
-      error: () => finish()
+      error: () => this.goToNotificationTarget(notification)
     });
   }
 
@@ -446,10 +246,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.notificationService.deleteNotification(notification.id).subscribe({
       next: () => {
-        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
-        if (!notification.read) {
-          this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
-        }
+        this.removeNotification(notification);
         this.toast.success('Notificacao eliminada.');
       },
       error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel eliminar a notificacao.'))
@@ -478,9 +275,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     request.subscribe({
       next: () => {
-        notification.read = true;
-        this.notifications = this.notifications.filter((item) => item.id !== notification.id);
-        this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
+        this.removeNotification(notification);
         this.toast.success(action === 'accept' ? 'Pedido aceite com sucesso.' : 'Pedido rejeitado.');
       },
       error: (error) => {
@@ -493,45 +288,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  labelForNotification(type: string): string {
-    return notificationText(type);
-  }
-
-  private searchUsers(term: string): void {
-    this.isSearching = true;
-    this.searchError = '';
-
-    this.userService.searchUsers(term).subscribe({
-      next: (users) => {
-        this.searchResults = users.filter((user) => user.id !== this.currentUser?.id);
-        this.isSearching = false;
-      },
-      error: (error) => {
-        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel pesquisar agora.'));
-        this.searchError = 'Nao foi possivel pesquisar agora.';
-        this.searchResults = [];
-        this.isSearching = false;
-      }
-    });
-  }
-
-  private loadSuggestions(): void {
-    this.isLoadingSuggestions = true;
-
-    this.userService.getSuggestions().subscribe({
-      next: (users) => {
-        this.suggestedUsers = users.filter((user) => user.id !== this.currentUser?.id);
-        this.isLoadingSuggestions = false;
-      },
-      error: (error) => {
-        this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel carregar sugestoes de perfis.'));
-        this.suggestedUsers = [];
-        this.isLoadingSuggestions = false;
-      }
-    });
-  }
-
-  private isAdmin(): boolean {
+  isAdmin(): boolean {
     return String(this.currentUser?.role || '').toLowerCase() === 'admin';
   }
 
@@ -541,17 +298,32 @@ export class HomeComponent implements OnInit, OnDestroy {
       : this.feedService.getFollowingFeed(page);
   }
 
-  private addCommentToPost(post: Post, comment: Comment): void {
-    post.comments = [...(post.comments || []), comment];
-    post.comments_count += 1;
+  private removeNotification(notification: Notification): void {
+    this.notifications = this.notifications.filter((item) => item.id !== notification.id);
+
+    if (!notification.read) {
+      this.unreadNotifications = Math.max(0, this.unreadNotifications - 1);
+    }
+
+    notification.read = true;
   }
 
-  private removeCommentFromPost(post: Post, comment: Comment): void {
-    const comments = post.comments || [];
-    const removedCount = comments.filter((item) => item.id === comment.id || item.parent_id === comment.id).length;
+  private goToNotificationTarget(notification: Notification): void {
+    this.showNotifications = false;
 
-    post.comments = comments.filter((item) => item.id !== comment.id && item.parent_id !== comment.id);
-    post.comments_count = Math.max(0, post.comments_count - removedCount);
+    if (notification.post_id) {
+      this.targetPostId = notification.post_id;
+      this.focusTargetPost();
+      this.router.navigate(['/app/home'], { state: { postId: notification.post_id } });
+      return;
+    }
+
+    if (notification.actor_id) {
+      this.router.navigate(['/app/perfil', notification.actor_id]);
+      return;
+    }
+
+    this.router.navigate(['/app/notificacoes']);
   }
 
   private loadComments(post: Post): void {
@@ -573,10 +345,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.isLoading || this.isLoadingMore || this.editingPostId) return;
 
     const pages = Array.from({ length: this.currentPage }, (_, index) => index + 1);
-    const requests = pages.map((page) => this.feedMode === 'general'
-      ? this.feedService.getPosts(page)
-      : this.feedService.getFollowingFeed(page)
-    );
+    const requests = pages.map((page) => this.getFeedPosts(page));
 
     forkJoin(requests).subscribe({
       next: (responses) => {

@@ -1,9 +1,9 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, HostListener, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Component, HostListener, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { Post } from '../../models/post.model';
 import { User } from '../../models/user.model';
+import { ProfilePostsComponent } from '../profile-posts/profile-posts.component';
 import { AuthService } from '../../services/auth.service';
 import { FeedService } from '../../services/feed.service';
 import { ToastService } from '../../services/toast.service';
@@ -12,7 +12,7 @@ import { UserService } from '../../services/user.service';
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, RouterModule, FormsModule],
+  imports: [CommonModule, RouterLink, RouterModule, ProfilePostsComponent],
   templateUrl: './perfil.component.html'
 })
 export class PerfilComponent implements OnInit {
@@ -41,8 +41,8 @@ export class PerfilComponent implements OnInit {
   pendingRequests: User[] = [];
   processingRequestIds = new Set<number>();
   hasPendingRequestFromProfile = false;
-  editingPostId: number | null = null;
-  editPostContent = '';
+
+  @ViewChild(ProfilePostsComponent) profilePosts?: ProfilePostsComponent;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -155,47 +155,22 @@ export class PerfilComponent implements OnInit {
     });
   }
 
-  canEditPost(post: Post): boolean {
-    return !!post.can_edit || Number(post.user_id) === Number(this.currentUser?.id);
-  }
-
-  canDeletePost(post: Post): boolean {
-    return !!post.can_delete || Number(post.user_id) === Number(this.currentUser?.id) || this.isAdmin();
-  }
-
   openPost(post: Post): void {
     this.router.navigate(['/app/comentario'], { state: { postId: post.id } });
   }
 
-  startEditPost(post: Post, event?: Event): void {
-    event?.stopPropagation();
-    this.editingPostId = post.id;
-    this.editPostContent = post.content;
-  }
-
-  cancelEditPost(event?: Event): void {
-    event?.stopPropagation();
-    this.editingPostId = null;
-    this.editPostContent = '';
-  }
-
-  savePost(post: Post, event?: Event): void {
-    event?.stopPropagation();
-    const content = this.editPostContent.trim();
-    if (!content) return;
-
-    this.feedService.updatePost(post.id, { content }).subscribe({
+  savePost(data: { post: Post; content: string }): void {
+    this.feedService.updatePost(data.post.id, { content: data.content }).subscribe({
       next: (response) => {
-        this.posts = this.posts.map((item) => item.id === post.id ? response.data : item);
-        this.cancelEditPost();
+        this.posts = this.posts.map((item) => item.id === data.post.id ? response.data : item);
+        this.profilePosts?.finishEdit();
         this.toast.success('Publicacao atualizada com sucesso.');
       },
       error: (error) => this.toast.error(this.toast.errorMessage(error, 'Nao foi possivel atualizar a publicacao.'))
     });
   }
 
-  deletePost(post: Post, event?: Event): void {
-    event?.stopPropagation();
+  deletePost(post: Post): void {
     this.toast.confirm({
       title: 'Eliminar publicacao',
       message: 'Deseja eliminar esta publicacao? Esta acao nao pode ser desfeita.',
@@ -334,7 +309,7 @@ export class PerfilComponent implements OnInit {
     });
   }
 
-  private isAdmin(): boolean {
+  isAdmin(): boolean {
     return String(this.currentUser?.role || '').toLowerCase() === 'admin';
   }
 
